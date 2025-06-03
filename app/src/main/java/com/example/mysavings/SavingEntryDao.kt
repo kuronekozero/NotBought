@@ -25,6 +25,9 @@ interface SavingEntryDao {
     @Query("SELECT SUM(cost) FROM saving_entries WHERE date BETWEEN :startDate AND :endDate")
     fun getTotalSavedBetweenDates(startDate: LocalDate, endDate: LocalDate): Flow<Double?>
 
+    @Query("SELECT category AS categoryName, SUM(cost) AS totalAmount FROM saving_entries GROUP BY category ORDER BY totalAmount DESC")
+    fun getSavingsPerCategory(): Flow<List<CategorySavings>>
+
     // Ты также можешь добавить более специфичные запросы, если потребуется,
     // но этот универсальный метод для диапазона дат очень гибок.
 }

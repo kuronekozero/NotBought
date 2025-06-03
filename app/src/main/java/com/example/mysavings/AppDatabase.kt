@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+
 // Конвертер для LocalDate, так как Room не умеет хранить его напрямую
 class LocalDateConverter {
     @androidx.room.TypeConverter

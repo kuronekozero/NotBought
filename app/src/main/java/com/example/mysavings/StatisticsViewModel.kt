@@ -48,6 +48,13 @@ class StatisticsViewModel(private val dao: SavingEntryDao) : ViewModel() {
             .map { it ?: 0.0 }
             .stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
     }
+
+    val savingsByCategory: StateFlow<List<CategorySavings>> = dao.getSavingsPerCategory()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Lazily,
+            initialValue = emptyList()
+        )
 }
 
 // Фабрика для StatisticsViewModel
