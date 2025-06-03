@@ -6,6 +6,9 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import java.time.LocalDate
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 // Конвертер для LocalDate, так как Room не умеет хранить его напрямую
 class LocalDateConverter {
@@ -20,11 +23,16 @@ class LocalDateConverter {
     }
 }
 
-@Database(entities = [SavingEntry::class], version = 1, exportSchema = false)
-@TypeConverters(LocalDateConverter::class) // Регистрируем конвертер
+@Database(
+    entities = [SavingEntry::class, UserCategory::class], // <<<--- ДОБАВЬ UserCategory::class
+    version = 2, // <<<--- УВЕЛИЧЬ ВЕРСИЮ (была 1)
+    exportSchema = false
+)
+@TypeConverters(LocalDateConverter::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun savingEntryDao(): SavingEntryDao
+    abstract fun userCategoryDao(): UserCategoryDao // <<<--- ДОБАВЬ DAO для категорий
 
     companion object {
         @Volatile
@@ -35,13 +43,47 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "my_savings_database" // Имя файла БД
+                    "my_savings_database"
                 )
-                    // .fallbackToDestructiveMigration() // Если будешь менять схему, для простоты на этапе разработки
+                    .fallbackToDestructiveMigration() // <<<--- ВАЖНО: для простоты при изменении версии
+                    // Если база категорий пуста, добавляем дефолтные
+                    // Этот коллбэк выполнится после создания или открытия БД
+                    .addCallback(object : Callback() {
+                        override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                            super.onCreate(db)
+                            // Заполняем дефолтными категориями при создании БД
+                            // Делаем это в корутине, чтобы не блокировать основной поток
+                            INSTANCE?.let { database ->
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    val categoryDao = database.userCategoryDao()
+                                    if (categoryDao.getCategoryCount() == 0) { // Проверяем, только если категории пусты
+                                        categoryDao.insertAll(DefaultCategories.getList())
+                                    }
+                                }
+                            }
+                        }
+                    })
                     .build()
                 INSTANCE = instance
                 instance
             }
         }
+    }
+}
+
+// Создадим объект для дефолтных категорий
+object DefaultCategories {
+    fun getList(): List<UserCategory> {
+        return listOf(
+            UserCategory(name = "Еда и напитки"),
+            UserCategory(name = "Развлечения"),
+            UserCategory(name = "Покупки (вещи)"),
+            UserCategory(name = "Транспорт"),
+            UserCategory(name = "Хобби"),
+            UserCategory(name = "Здоровье"),
+            UserCategory(name = "Дом"),
+            UserCategory(name = "Образование"),
+            UserCategory(name = "Другое")
+        )
     }
 }

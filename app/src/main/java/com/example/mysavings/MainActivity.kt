@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle // Используй подходящие иконки
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -17,6 +17,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.mysavings.ui.theme.MySavingsTheme
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+
 
 class MainActivity : ComponentActivity() {
 
@@ -24,11 +27,16 @@ class MainActivity : ComponentActivity() {
     private val savingEntryDao by lazy { database.savingEntryDao() }
 
     private val mainViewModel: MainViewModel by viewModels {
-        MainViewModelFactory(savingEntryDao)
+        MainViewModelFactory(savingEntryDao, userCategoryDao) // <<<--- Передаем userCategoryDao
     }
+
     private val statisticsViewModel: StatisticsViewModel by viewModels {
         StatisticsViewModelFactory(savingEntryDao)
     }
+
+    private val userCategoryDao by lazy { database.userCategoryDao() } // Получаем DAO для категорий
+
+
 
     @OptIn(ExperimentalMaterial3Api::class) // Для Scaffold
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -97,6 +105,7 @@ fun BottomNavigationBar(navController: NavController) {
         }
     }
 }
+
 
 // Вспомогательная функция для получения названий для BottomBar
 fun getLabelForScreen(route: String): String {
