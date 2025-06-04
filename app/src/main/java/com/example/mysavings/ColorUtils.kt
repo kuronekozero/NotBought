@@ -7,14 +7,10 @@ fun generateDistinctColors(count: Int): List<Color> {
     val colors = mutableListOf<Color>()
     if (count <= 0) return colors
 
-    // Базовые параметры для HSL
-    val saturation = 0.7f // Насыщенность (0.0f до 1.0f)
-    val lightness = 0.6f  // Светлота (0.0f до 1.0f) - не слишком темный, не слишком светлый
-
-    // Золотой угол для генерации хорошо распределенных оттенков
-    // Примерно 137.5 градусов. Это помогает получать визуально различимые цвета.
+    val saturation = 0.7f
+    val lightness = 0.6f
     val goldenRatioConjugate = 0.618033988749895f
-    var hue = Math.random().toFloat() // Случайная начальная точка для оттенка (0.0f до 1.0f)
+    var hue = Math.random().toFloat()
 
     for (i in 0 until count) {
         hue = (hue + goldenRatioConjugate) % 1.0f
@@ -22,3 +18,4 @@ fun generateDistinctColors(count: Int): List<Color> {
     }
     return colors
 }
+
