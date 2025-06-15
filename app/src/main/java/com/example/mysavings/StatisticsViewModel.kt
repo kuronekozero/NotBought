@@ -11,6 +11,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 
+
 class StatisticsViewModel(private val dao: SavingEntryDao) : ViewModel() {
 
     val totalSaved: StateFlow<Double> = dao.getTotalSaved()

@@ -1,60 +1,159 @@
-package com.example.mysavings // Замени com.example.mysavings на имя твоего пакета
+package com.example.mysavings
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.outlined.AddCircle
+import androidx.compose.material.icons.outlined.PieChart
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.mysavings.ui.theme.MySavingsTheme
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.collectAsState
+import androidx.compose.foundation.isSystemInDarkTheme
 
 
 class MainActivity : ComponentActivity() {
 
     private val database by lazy { AppDatabase.getDatabase(this) }
     private val savingEntryDao by lazy { database.savingEntryDao() }
-
-    private val mainViewModel: MainViewModel by viewModels {
-        MainViewModelFactory(savingEntryDao, userCategoryDao) // <<<--- Передаем userCategoryDao
+    private val userCategoryDao by lazy { database.userCategoryDao() }
+    private val settingsRepository by lazy { SettingsRepository(this) }
+    private val settingsViewModel: SettingsViewModel by viewModels {
+        SettingsViewModelFactory(settingsRepository)
     }
 
+    private val mainViewModel: MainViewModel by viewModels {
+        MainViewModelFactory(savingEntryDao, userCategoryDao)
+    }
     private val statisticsViewModel: StatisticsViewModel by viewModels {
         StatisticsViewModelFactory(savingEntryDao)
     }
 
-    private val userCategoryDao by lazy { database.userCategoryDao() } // Получаем DAO для категорий
-
-
-
-    @OptIn(ExperimentalMaterial3Api::class) // Для Scaffold
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MySavingsTheme {
-                val navController = rememberNavController() // Контроллер навигации
-                Scaffold(
-                    bottomBar = { BottomNavigationBar(navController = navController) }
-                ) { innerPadding ->
-                    AppNavigationHost(
-                        navController = navController,
-                        modifier = Modifier.padding(innerPadding), // Важно для правильных отступов
-                        mainViewModel = mainViewModel,
-                        statisticsViewModel = statisticsViewModel
-                    )
-                }
+            val themeOption by settingsRepository.themeOptionFlow.collectAsState(initial = ThemeOption.DARK)
+            val useDarkTheme = when (themeOption) {
+                ThemeOption.LIGHT -> false
+                ThemeOption.DARK -> true
+                ThemeOption.SYSTEM -> isSystemInDarkTheme()
             }
+
+            MySavingsTheme(darkTheme = useDarkTheme) {
+                AppShell(mainViewModel, statisticsViewModel, settingsViewModel)
+            }
+        }
+    }
+}
+
+@Composable
+fun AppShell(
+    mainViewModel: MainViewModel,
+    statisticsViewModel: StatisticsViewModel,
+    settingsViewModel: SettingsViewModel
+) {
+    val navController = rememberNavController()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            AppDrawerContent(
+                navController = navController,
+                currentRoute = currentRoute,
+                closeDrawer = { scope.launch { drawerState.close() } }
+            )
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                AppTopBar(
+                    currentRoute = currentRoute,
+                    onNavigationIconClick = { scope.launch { drawerState.open() } }
+                )
+            }
+        ) { innerPadding ->
+            AppNavigationHost(
+                navController = navController,
+                modifier = Modifier.padding(innerPadding),
+                mainViewModel = mainViewModel,
+                statisticsViewModel = statisticsViewModel,
+                settingsViewModel = settingsViewModel // <<<--- ЭТА СТРОКА БЫЛА ПРОПУЩЕНА
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppTopBar(currentRoute: String?, onNavigationIconClick: () -> Unit) {
+    TopAppBar(
+        title = {
+            Text(text = getTitleForScreen(currentRoute))
+        },
+        navigationIcon = {
+            IconButton(onClick = onNavigationIconClick) {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "Меню навигации"
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun AppDrawerContent(
+    navController: NavController,
+    currentRoute: String?,
+    closeDrawer: () -> Unit
+) {
+    ModalDrawerSheet {
+        Spacer(Modifier.height(12.dp))
+        val menuItems = listOf(
+            Screen.MainScreen,
+            Screen.StatisticsScreen,
+            Screen.SettingsScreen
+        )
+        menuItems.forEach { screen ->
+            NavigationDrawerItem(
+                icon = { Icon(getIconForScreen(screen.route), contentDescription = null) },
+                label = { Text(getLabelForScreen(screen.route)) },
+                selected = currentRoute == screen.route,
+                onClick = {
+                    navController.navigate(screen.route) {
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                    closeDrawer()
+                },
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+            )
         }
     }
 }
@@ -64,11 +163,12 @@ fun AppNavigationHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     mainViewModel: MainViewModel,
-    statisticsViewModel: StatisticsViewModel
+    statisticsViewModel: StatisticsViewModel,
+    settingsViewModel: SettingsViewModel // <<<--- Добавь settingsViewModel
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.MainScreen.route, // Начальный экран
+        startDestination = Screen.MainScreen.route,
         modifier = modifier
     ) {
         composable(Screen.MainScreen.route) {
@@ -77,41 +177,36 @@ fun AppNavigationHost(
         composable(Screen.StatisticsScreen.route) {
             StatisticsScreen(viewModel = statisticsViewModel)
         }
-    }
-}
-
-@Composable
-fun BottomNavigationBar(navController: NavController) {
-    val items = listOf(
-        Screen.MainScreen to Icons.Default.AddCircle, // Пример иконки
-        Screen.StatisticsScreen to Icons.Default.List // Пример иконки
-    )
-    // Используем NavigationBar вместо BottomNavigation в Material 3
-    NavigationBar {
-        val currentRoute = navController.currentBackStackEntry?.destination?.route
-        items.forEach { (screen, icon) ->
-            NavigationBarItem(
-                icon = { Icon(icon, contentDescription = screen.route) },
-                label = { Text(getLabelForScreen(screen.route)) }, // Функция для получения названия
-                selected = currentRoute == screen.route,
-                onClick = {
-                    navController.navigate(screen.route) {
-                        // Избегаем создания нового экземпляра экрана, если он уже в стеке
-                        popUpTo(navController.graph.startDestinationId)
-                        launchSingleTop = true
-                    }
-                }
-            )
+        composable(Screen.SettingsScreen.route) {
+            SettingsScreen(viewModel = settingsViewModel) // <<<--- Используй settingsViewModel
         }
     }
 }
 
-
-// Вспомогательная функция для получения названий для BottomBar
-fun getLabelForScreen(route: String): String {
+private fun getTitleForScreen(route: String?): String {
     return when (route) {
         Screen.MainScreen.route -> "Добавить"
         Screen.StatisticsScreen.route -> "Статистика"
+        Screen.SettingsScreen.route -> "Настройки"
+        else -> "My Savings"
+    }
+}
+
+private fun getLabelForScreen(route: String): String {
+    return when (route) {
+        Screen.MainScreen.route -> "Добавить"
+        Screen.StatisticsScreen.route -> "Статистика"
+        Screen.SettingsScreen.route -> "Настройки"
         else -> ""
+    }
+}
+
+@Composable
+private fun getIconForScreen(route: String): ImageVector {
+    return when (route) {
+        Screen.MainScreen.route -> Icons.Outlined.AddCircle
+        Screen.StatisticsScreen.route -> Icons.Outlined.PieChart
+        Screen.SettingsScreen.route -> Icons.Outlined.Settings
+        else -> Icons.Outlined.AddCircle
     }
 }
