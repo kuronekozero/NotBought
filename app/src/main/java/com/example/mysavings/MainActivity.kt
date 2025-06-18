@@ -29,6 +29,8 @@ import com.example.mysavings.ui.theme.MySavingsTheme
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.ShowChart
 
 
 class MainActivity : ComponentActivity() {
@@ -38,7 +40,7 @@ class MainActivity : ComponentActivity() {
     private val userCategoryDao by lazy { database.userCategoryDao() }
     private val settingsRepository by lazy { SettingsRepository(this) }
     private val settingsViewModel: SettingsViewModel by viewModels {
-        SettingsViewModelFactory(settingsRepository)
+        SettingsViewModelFactory(settingsRepository, savingEntryDao, applicationContext)
     }
 
     private val mainViewModel: MainViewModel by viewModels {
@@ -46,6 +48,12 @@ class MainActivity : ComponentActivity() {
     }
     private val statisticsViewModel: StatisticsViewModel by viewModels {
         StatisticsViewModelFactory(savingEntryDao)
+    }
+
+    private val goalDao by lazy { database.goalDao() }
+
+    private val goalsViewModel: GoalsViewModel by viewModels {
+        GoalsViewModelFactory(goalDao, savingEntryDao)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,9 +67,13 @@ class MainActivity : ComponentActivity() {
             }
 
             MySavingsTheme(darkTheme = useDarkTheme) {
-                AppShell(mainViewModel, statisticsViewModel, settingsViewModel)
+                AppShell(
+                    mainViewModel = mainViewModel,
+                    statisticsViewModel = statisticsViewModel,
+                    settingsViewModel = settingsViewModel,
+                    goalsViewModel = goalsViewModel
+                )
             }
-        }
     }
 }
 
@@ -69,7 +81,8 @@ class MainActivity : ComponentActivity() {
 fun AppShell(
     mainViewModel: MainViewModel,
     statisticsViewModel: StatisticsViewModel,
-    settingsViewModel: SettingsViewModel
+    settingsViewModel: SettingsViewModel,
+    goalsViewModel: GoalsViewModel
 ) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -100,7 +113,8 @@ fun AppShell(
                 modifier = Modifier.padding(innerPadding),
                 mainViewModel = mainViewModel,
                 statisticsViewModel = statisticsViewModel,
-                settingsViewModel = settingsViewModel // <<<--- ЭТА СТРОКА БЫЛА ПРОПУЩЕНА
+                settingsViewModel = settingsViewModel,
+                goalsViewModel = goalsViewModel
             )
         }
     }
@@ -135,6 +149,7 @@ fun AppDrawerContent(
         val menuItems = listOf(
             Screen.MainScreen,
             Screen.StatisticsScreen,
+            Screen.GoalsScreen,
             Screen.SettingsScreen
         )
         menuItems.forEach { screen ->
@@ -164,7 +179,8 @@ fun AppNavigationHost(
     modifier: Modifier = Modifier,
     mainViewModel: MainViewModel,
     statisticsViewModel: StatisticsViewModel,
-    settingsViewModel: SettingsViewModel // <<<--- Добавь settingsViewModel
+    settingsViewModel: SettingsViewModel,
+    goalsViewModel: GoalsViewModel
 ) {
     NavHost(
         navController = navController,
@@ -178,7 +194,16 @@ fun AppNavigationHost(
             StatisticsScreen(viewModel = statisticsViewModel)
         }
         composable(Screen.SettingsScreen.route) {
-            SettingsScreen(viewModel = settingsViewModel) // <<<--- Используй settingsViewModel
+            SettingsScreen(viewModel = settingsViewModel)
+        }
+        composable(Screen.GoalsScreen.route) {
+            GoalsListScreen(
+                navController = navController,
+                viewModel = goalsViewModel
+            )
+        }
+        composable(Screen.AddGoalScreen.route) {
+            AddGoalScreen(navController = navController)
         }
     }
 }
@@ -188,6 +213,8 @@ private fun getTitleForScreen(route: String?): String {
         Screen.MainScreen.route -> "Добавить"
         Screen.StatisticsScreen.route -> "Статистика"
         Screen.SettingsScreen.route -> "Настройки"
+        Screen.GoalsScreen.route -> "Мои Цели" // <<<--- Добавь
+        Screen.AddGoalScreen.route -> "Новая Цель" // <<<--- Добавь
         else -> "My Savings"
     }
 }
@@ -197,6 +224,7 @@ private fun getLabelForScreen(route: String): String {
         Screen.MainScreen.route -> "Добавить"
         Screen.StatisticsScreen.route -> "Статистика"
         Screen.SettingsScreen.route -> "Настройки"
+        Screen.GoalsScreen.route -> "Цели" // <<<--- Добавь
         else -> ""
     }
 }
@@ -205,8 +233,9 @@ private fun getLabelForScreen(route: String): String {
 private fun getIconForScreen(route: String): ImageVector {
     return when (route) {
         Screen.MainScreen.route -> Icons.Outlined.AddCircle
-        Screen.StatisticsScreen.route -> Icons.Outlined.PieChart
+        Screen.StatisticsScreen.route -> Icons.Outlined.ShowChart
         Screen.SettingsScreen.route -> Icons.Outlined.Settings
+        Screen.GoalsScreen.route -> Icons.Outlined.Flag
         else -> Icons.Outlined.AddCircle
     }
-}
+}}

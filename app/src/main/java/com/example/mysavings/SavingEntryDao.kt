@@ -2,6 +2,7 @@ package com.example.mysavings // Замени com.example.mysavings на имя 
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
@@ -28,6 +29,9 @@ interface SavingEntryDao {
     @Query("SELECT category AS categoryName, SUM(cost) AS totalAmount FROM saving_entries GROUP BY category ORDER BY totalAmount DESC")
     fun getSavingsPerCategory(): Flow<List<CategorySavings>>
 
-    // Ты также можешь добавить более специфичные запросы, если потребуется,
-    // но этот универсальный метод для диапазона дат очень гибок.
+    @Query("SELECT * FROM saving_entries")
+    suspend fun getAllEntriesList(): List<SavingEntry>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(entries: List<SavingEntry>)
 }

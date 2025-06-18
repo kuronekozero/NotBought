@@ -25,15 +25,16 @@ class LocalDateConverter {
 }
 
 @Database(
-    entities = [SavingEntry::class, UserCategory::class], // <<<--- ДОБАВЬ UserCategory::class
-    version = 2, // <<<--- УВЕЛИЧЬ ВЕРСИЮ (была 1)
+    entities = [SavingEntry::class, UserCategory::class, Goal::class],
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(LocalDateConverter::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun savingEntryDao(): SavingEntryDao
-    abstract fun userCategoryDao(): UserCategoryDao // <<<--- ДОБАВЬ DAO для категорий
+    abstract fun userCategoryDao(): UserCategoryDao
+    abstract fun goalDao(): GoalDao
 
     companion object {
         @Volatile

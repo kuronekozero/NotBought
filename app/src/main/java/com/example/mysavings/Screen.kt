@@ -1,7 +1,9 @@
-package com.example.mysavings // Замени com.example.mysavings на имя твоего пакета
+package com.example.mysavings
 
 sealed class Screen(val route: String) {
     object MainScreen : Screen("main_screen")
     object StatisticsScreen : Screen("statistics_screen")
     object SettingsScreen : Screen("settings_screen")
-    }
+    object GoalsScreen : Screen("goals_screen")
+    object AddGoalScreen : Screen("add_goal_screen")
+}
