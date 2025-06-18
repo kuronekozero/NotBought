@@ -31,11 +31,8 @@ fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel) {
     val activeGoals = goalsState.activeGoals
     val completedGoals = goalsState.completedGoals
 
-    // <<<--- Добавь этот блок
     LaunchedEffect(key1 = Unit) {
         viewModel.navigateToGoal.collect { goalId ->
-            // goalId может быть null (для новой цели) или Int (для редактирования)
-            // Мы просто переходим на экран, а ViewModel уже содержит нужные данные
             navController.navigate(Screen.AddGoalScreen.route)
         }
     }
@@ -167,8 +164,42 @@ fun GoalCard(
                                 showMenu = false
                             },
                             leadingIcon = { Icon(Icons.Outlined.Delete, null) }
+                        )
+                    }
+                }
+            }
+
+            // --- NEW: Goal Description ---
+            // We check if the description is not null or blank before showing it.
+            if (!goalWithProgress.goal.description.isNullOrBlank()) {
+                Text(
+                    text = goalWithProgress.goal.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant // Use a slightly muted color
+                )
+            }
+
+            // --- NEW: Progress Bar ---
+            LinearProgressIndicator(
+                progress = { progress }, // Use the calculated progress
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = currencyFormat.format(goalWithProgress.currentAmount),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = currencyFormat.format(goalWithProgress.goal.targetAmount),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
     }
-}}}
+}
