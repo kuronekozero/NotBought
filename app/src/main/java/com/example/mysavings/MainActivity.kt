@@ -203,7 +203,10 @@ fun AppNavigationHost(
             )
         }
         composable(Screen.AddGoalScreen.route) {
-            AddGoalScreen(navController = navController)
+            AddGoalScreen(
+                navController = navController,
+                viewModel = goalsViewModel
+            )
         }
     }
 }

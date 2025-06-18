@@ -17,21 +17,53 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import java.text.NumberFormat
 import java.util.Locale
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 @Composable
 fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel) {
-    val goalsWithProgress by viewModel.goalsWithProgress.collectAsState()
+    val goalsState by viewModel.goalsState.collectAsState()
+    val activeGoals = goalsState.activeGoals
+    val completedGoals = goalsState.completedGoals
+
+    // <<<--- Добавь этот блок
+    LaunchedEffect(key1 = Unit) {
+        viewModel.navigateToGoal.collect { goalId ->
+            // goalId может быть null (для новой цели) или Int (для редактирования)
+            // Мы просто переходим на экран, а ViewModel уже содержит нужные данные
+            navController.navigate(Screen.AddGoalScreen.route)
+        }
+    }
+
+    if (viewModel.showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelDeletion() },
+            title = { Text("Подтверждение") },
+            text = { Text("Вы уверены, что хотите удалить эту цель?") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.confirmDeletion() }) { Text("Удалить") }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelDeletion() }) { Text("Отмена") }
+            }
+        )
+    }
 
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate(Screen.AddGoalScreen.route) }
+                onClick = { viewModel.onAddGoalClicked() }
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "Добавить новую цель")
             }
         }
     ) { paddingValues ->
-        if (goalsWithProgress.isEmpty()) {
+        if (activeGoals.isEmpty() && completedGoals.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -49,8 +81,39 @@ fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel) {
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(goalsWithProgress) { goalItem ->
-                    GoalCard(goalWithProgress = goalItem)
+                if (activeGoals.isNotEmpty()) {
+                    item {
+                        Text(
+                            "Активные цели",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    items(activeGoals, key = { it.goal.id }) { goalItem ->
+                        GoalCard(
+                            goalWithProgress = goalItem,
+                            onEditClicked = { viewModel.onEditGoalClicked(goalItem.goal) },
+                            onDeleteClicked = { viewModel.onDeleteGoalClicked(goalItem.goal) }
+                        )
+                    }
+                }
+
+                if (completedGoals.isNotEmpty()) {
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            "Завершенные цели",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    items(completedGoals, key = { it.goal.id }) { goalItem ->
+                        GoalCard(
+                            goalWithProgress = goalItem,
+                            onEditClicked = { viewModel.onEditGoalClicked(goalItem.goal) },
+                            onDeleteClicked = { viewModel.onDeleteGoalClicked(goalItem.goal) }
+                        )
+                    }
                 }
             }
         }
@@ -58,7 +121,12 @@ fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel) {
 }
 
 @Composable
-fun GoalCard(goalWithProgress: GoalWithProgress) {
+fun GoalCard(
+    goalWithProgress: GoalWithProgress,
+    onEditClicked: () -> Unit, // <<<--- Добавь
+    onDeleteClicked: () -> Unit // <<<--- Добавь
+) {
+    var showMenu by remember { mutableStateOf(false) }
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale("ru", "RU"))
     val progress = (goalWithProgress.currentAmount / goalWithProgress.goal.targetAmount).toFloat().coerceIn(0f, 1f)
 
@@ -67,44 +135,40 @@ fun GoalCard(goalWithProgress: GoalWithProgress) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = goalWithProgress.goal.name,
-                style = MaterialTheme.typography.titleLarge
-            )
-            goalWithProgress.goal.description?.let {
-                if (it.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(MaterialTheme.shapes.small)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.Top
             ) {
                 Text(
-                    text = currencyFormat.format(goalWithProgress.currentAmount),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold
+                    text = goalWithProgress.goal.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f)
                 )
-                Text(
-                    text = currencyFormat.format(goalWithProgress.goal.targetAmount),
-                    style = MaterialTheme.typography.bodySmall
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Default.MoreVert, "Опции")
+                    }
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Редактировать") },
+                            onClick = {
+                                onEditClicked()
+                                showMenu = false
+                            },
+                            leadingIcon = { Icon(Icons.Outlined.Edit, null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Удалить") },
+                            onClick = {
+                                onDeleteClicked()
+                                showMenu = false
+                            },
+                            leadingIcon = { Icon(Icons.Outlined.Delete, null) }
                 )
             }
         }
     }
-}
+}}}

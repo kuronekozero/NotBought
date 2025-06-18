@@ -4,6 +4,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
+import java.time.LocalDateTime
 
 object CsvHandler {
 
@@ -35,7 +36,7 @@ object CsvHandler {
                                 itemName = tokens[1].trim('"'),
                                 cost = tokens[2].toDouble(),
                                 category = tokens[3].trim('"'),
-                                date = LocalDate.parse(tokens[4])
+                                date = LocalDateTime.parse(tokens[4])
                             )
                             entries.add(entry)
                         }

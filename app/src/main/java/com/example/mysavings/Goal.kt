@@ -2,7 +2,7 @@ package com.example.mysavings
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Entity(tableName = "goals")
 data class Goal(
@@ -11,6 +11,6 @@ data class Goal(
     val name: String,
     val description: String?,
     val targetAmount: Double,
-    val creationDate: LocalDate,
-    val savingsStartDate: LocalDate
+    val creationDate: LocalDateTime,
+    val savingsStartDate: LocalDateTime
 )

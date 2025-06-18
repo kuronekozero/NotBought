@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 
 class MainViewModel(
     private val savingEntryDao: SavingEntryDao,
@@ -67,7 +68,7 @@ class MainViewModel(
                 itemName = itemName,
                 cost = cost,
                 category = selectedCategoryName, // Сохраняем имя категории
-                // date = LocalDate.now() // дата уже по умолчанию в SavingEntry
+                date = LocalDateTime.now()
             )
             viewModelScope.launch {
                 savingEntryDao.insert(newEntry)

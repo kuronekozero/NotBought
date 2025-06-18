@@ -9,7 +9,20 @@ import java.time.LocalDate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import androidx.room.TypeConverter
+import java.time.LocalDateTime
 
+class LocalDateTimeConverter {
+    @TypeConverter
+    fun fromTimestamp(value: Long?): LocalDateTime? {
+        return value?.let { LocalDateTime.ofEpochSecond(it, 0, java.time.ZoneOffset.UTC) }
+    }
+
+    @TypeConverter
+    fun dateToTimestamp(date: LocalDateTime?): Long? {
+        return date?.toEpochSecond(java.time.ZoneOffset.UTC)
+    }
+}
 
 // Конвертер для LocalDate, так как Room не умеет хранить его напрямую
 class LocalDateConverter {
@@ -26,10 +39,10 @@ class LocalDateConverter {
 
 @Database(
     entities = [SavingEntry::class, UserCategory::class, Goal::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
-@TypeConverters(LocalDateConverter::class)
+@TypeConverters(LocalDateConverter::class, LocalDateTimeConverter::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun savingEntryDao(): SavingEntryDao
