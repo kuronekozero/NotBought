@@ -24,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.material3.LinearProgressIndicator
 
 @Composable
 fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel) {
@@ -120,12 +121,18 @@ fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel) {
 @Composable
 fun GoalCard(
     goalWithProgress: GoalWithProgress,
-    onEditClicked: () -> Unit, // <<<--- Добавь
-    onDeleteClicked: () -> Unit // <<<--- Добавь
+    onEditClicked: () -> Unit,
+    onDeleteClicked: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale("ru", "RU"))
-    val progress = (goalWithProgress.currentAmount / goalWithProgress.goal.targetAmount).toFloat().coerceIn(0f, 1f)
+
+    val goal = goalWithProgress.goal
+    val rawCurrentAmount = goalWithProgress.currentAmount
+    val isCompleted = rawCurrentAmount >= goal.targetAmount
+
+    val displayAmount = if (isCompleted) goal.targetAmount else rawCurrentAmount
+    val progress = if (isCompleted) 1f else (rawCurrentAmount / goal.targetAmount).toFloat().coerceIn(0f, 1f)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -137,7 +144,7 @@ fun GoalCard(
                 verticalAlignment = Alignment.Top
             ) {
                 Text(
-                    text = goalWithProgress.goal.name,
+                    text = goal.name,
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.weight(1f)
                 )
@@ -168,36 +175,38 @@ fun GoalCard(
                     }
                 }
             }
-
-            // --- NEW: Goal Description ---
-            // We check if the description is not null or blank before showing it.
-            if (!goalWithProgress.goal.description.isNullOrBlank()) {
-                Text(
-                    text = goalWithProgress.goal.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant // Use a slightly muted color
-                )
+            goal.description?.let {
+                if (it.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // --- NEW: Progress Bar ---
             LinearProgressIndicator(
-                progress = { progress }, // Use the calculated progress
-                modifier = Modifier.fillMaxWidth()
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(MaterialTheme.shapes.small)
             )
-
+            Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = currencyFormat.format(goalWithProgress.currentAmount),
+                    text = currencyFormat.format(displayAmount),
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = currencyFormat.format(goalWithProgress.goal.targetAmount),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = currencyFormat.format(goal.targetAmount),
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         }
