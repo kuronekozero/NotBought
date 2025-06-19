@@ -50,31 +50,34 @@ class MainViewModel(
         }
     }
 
-
     fun onItemNameChange(newName: String) { itemName = newName }
     fun onItemCostChange(newCost: String) { itemCost = newCost }
 
     fun onCategoryChange(newCategory: UserCategory) { // Теперь принимаем UserCategory
         selectedCategoryName = newCategory.name
     }
-    // Если нужно менять по имени (например, из текстового поля, но у нас dropdown)
-    // fun onCategoryNameChange(newCategoryName: String) { selectedCategoryName = newCategoryName }
 
+    fun saveSavingEntry(entryType: EntryType) {
+        val costFromInput = itemCost.toDoubleOrNull()
+        if (itemName.isNotBlank() && costFromInput != null && costFromInput > 0 && selectedCategoryName.isNotBlank()) {
 
-    fun saveSavingEntry() {
-        val cost = itemCost.toDoubleOrNull()
-        if (itemName.isNotBlank() && cost != null && cost > 0 && selectedCategoryName.isNotBlank()) {
+            val finalCost = if (entryType == EntryType.WASTE) {
+                -costFromInput // Сохраняем как отрицательное число
+            } else {
+                costFromInput // Сохраняем как положительное число
+            }
+
             val newEntry = SavingEntry(
                 itemName = itemName,
-                cost = cost,
-                category = selectedCategoryName, // Сохраняем имя категории
+                cost = finalCost, // <<<--- Используем finalCost
+                category = selectedCategoryName,
                 date = LocalDateTime.now()
             )
             viewModelScope.launch {
                 savingEntryDao.insert(newEntry)
+                // Очистка формы остается
                 itemName = ""
                 itemCost = ""
-                // selectedCategoryName остается (для удобства)
             }
         } else {
             println("Ошибка: Имя, стоимость и категория должны быть заполнены корректно.")

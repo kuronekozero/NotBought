@@ -35,7 +35,8 @@ class GoalsViewModel(
                     val relevantSavings = savings.filter { saving ->
                         !saving.date.isBefore(goal.savingsStartDate)
                     }
-                    val currentAmount = relevantSavings.sumOf { it.cost }
+                    val netAmount = relevantSavings.sumOf { it.cost }
+                    val currentAmount = maxOf(0.0, netAmount)
                     GoalWithProgress(goal, currentAmount)
                 }
 

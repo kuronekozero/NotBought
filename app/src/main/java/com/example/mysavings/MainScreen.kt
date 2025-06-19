@@ -7,23 +7,27 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit // Иконка для кнопки управления категориями
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog // Для диалогового окна
+import androidx.compose.ui.window.Dialog
+import androidx.navigation.NavController
+import androidx.compose.material.icons.filled.ArrowBack
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: MainViewModel) {
+fun MainScreen(
+    viewModel: MainViewModel,
+    entryType: EntryType,
+    navController: NavController
+) {
     var categoryExpanded by remember { mutableStateOf(false) }
-    // Собираем список категорий из ViewModel
     val categoriesList by viewModel.categories.collectAsState()
-    // Состояние для диалога (управляется из ViewModel)
     val showDialog = viewModel.showCategoryDialog
-
 
     if (showDialog) {
         CategoryManagementDialog(
@@ -33,85 +37,101 @@ fun MainScreen(viewModel: MainViewModel) {
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text("Добавить экономию", style = MaterialTheme.typography.headlineSmall)
-
-        OutlinedTextField(
-            value = viewModel.itemName,
-            onValueChange = { viewModel.onItemNameChange(it) },
-            label = { Text("Название товара/услуги") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        OutlinedTextField(
-            value = viewModel.itemCost,
-            onValueChange = { viewModel.onItemCostChange(it) },
-            label = { Text("Стоимость") },
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Блок выбора категории и кнопка управления
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(if (entryType == EntryType.SAVING) "Добавить экономию" else "Добавить трату")
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Назад")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(modifier = Modifier.weight(1f)) { // Занимает все доступное место, кроме кнопки
-                ExposedDropdownMenuBox(
-                    expanded = categoryExpanded,
-                    onExpandedChange = { categoryExpanded = !categoryExpanded }
-                ) {
-                    OutlinedTextField(
-                        value = viewModel.selectedCategoryName, // Используем имя выбранной категории
-                        onValueChange = {},
-                        label = { Text("Категория") },
-                        readOnly = true,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(
+            OutlinedTextField(
+                value = viewModel.itemName,
+                onValueChange = { viewModel.onItemNameChange(it) },
+                label = { Text("Название товара/услуги") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = viewModel.itemCost,
+                onValueChange = { viewModel.onItemCostChange(it) },
+                label = { Text("Стоимость") },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    ExposedDropdownMenuBox(
                         expanded = categoryExpanded,
-                        onDismissRequest = { categoryExpanded = false }
+                        onExpandedChange = { categoryExpanded = !categoryExpanded }
                     ) {
-                        if (categoriesList.isEmpty()) {
-                            DropdownMenuItem(
-                                text = { Text("Нет категорий. Добавьте категорию.") },
-                                onClick = {
-                                    categoryExpanded = false
-                                    viewModel.openCategoryDialog() // Открыть диалог, если категорий нет
-                                }
-                            )
-                        } else {
-                            categoriesList.forEach { category -> // Теперь итерируемся по List<UserCategory>
+                        OutlinedTextField(
+                            value = viewModel.selectedCategoryName,
+                            onValueChange = {},
+                            label = { Text("Категория") },
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                            modifier = Modifier.menuAnchor().fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = categoryExpanded,
+                            onDismissRequest = { categoryExpanded = false }
+                        ) {
+                            if (categoriesList.isEmpty()) {
                                 DropdownMenuItem(
-                                    text = { Text(category.name) }, // Отображаем имя категории
+                                    text = { Text("Нет категорий. Добавьте категорию.") },
                                     onClick = {
-                                        viewModel.onCategoryChange(category) // Передаем объект UserCategory
                                         categoryExpanded = false
+                                        viewModel.openCategoryDialog()
                                     }
                                 )
+                            } else {
+                                categoriesList.forEach { category ->
+                                    DropdownMenuItem(
+                                        text = { Text(category.name) },
+                                        onClick = {
+                                            viewModel.onCategoryChange(category)
+                                            categoryExpanded = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
                 }
+                Spacer(Modifier.width(8.dp))
+                IconButton(onClick = { viewModel.openCategoryDialog() }) {
+                    Icon(Icons.Filled.Edit, contentDescription = "Управление категориями")
+                }
             }
-            Spacer(Modifier.width(8.dp))
-            IconButton(onClick = { viewModel.openCategoryDialog() }) {
-                Icon(Icons.Filled.Edit, contentDescription = "Управление категориями")
-            }
-        }
 
-        Button(
-            onClick = { viewModel.saveSavingEntry() },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Сохранить")
+            Button(
+                onClick = {
+                    viewModel.saveSavingEntry(entryType)
+                    navController.popBackStack()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (entryType == EntryType.SAVING) "Сохранить экономию" else "Сохранить трату")
+            }
         }
     }
 }

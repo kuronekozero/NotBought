@@ -31,6 +31,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.ShowChart
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+
 
 
 class MainActivity : ComponentActivity() {
@@ -138,86 +141,112 @@ fun AppTopBar(currentRoute: String?, onNavigationIconClick: () -> Unit) {
     )
 }
 
-@Composable
-fun AppDrawerContent(
-    navController: NavController,
-    currentRoute: String?,
-    closeDrawer: () -> Unit
-) {
-    ModalDrawerSheet {
-        Spacer(Modifier.height(12.dp))
-        val menuItems = listOf(
-            Screen.MainScreen,
-            Screen.StatisticsScreen,
-            Screen.GoalsScreen,
-            Screen.SettingsScreen
-        )
-        menuItems.forEach { screen ->
-            NavigationDrawerItem(
-                icon = { Icon(getIconForScreen(screen.route), contentDescription = null) },
-                label = { Text(getLabelForScreen(screen.route)) },
-                selected = currentRoute == screen.route,
-                onClick = {
-                    navController.navigate(screen.route) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                    closeDrawer()
-                },
-                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-            )
-        }
-    }
-}
-
-@Composable
-fun AppNavigationHost(
-    navController: NavHostController,
-    modifier: Modifier = Modifier,
-    mainViewModel: MainViewModel,
-    statisticsViewModel: StatisticsViewModel,
-    settingsViewModel: SettingsViewModel,
-    goalsViewModel: GoalsViewModel
-) {
-    NavHost(
-        navController = navController,
-        startDestination = Screen.MainScreen.route,
-        modifier = modifier
+    @Composable
+    fun AppDrawerContent(
+        navController: NavController,
+        currentRoute: String?,
+        closeDrawer: () -> Unit
     ) {
-        composable(Screen.MainScreen.route) {
-            MainScreen(viewModel = mainViewModel)
-        }
-        composable(Screen.StatisticsScreen.route) {
-            StatisticsScreen(viewModel = statisticsViewModel)
-        }
-        composable(Screen.SettingsScreen.route) {
-            SettingsScreen(viewModel = settingsViewModel)
-        }
-        composable(Screen.GoalsScreen.route) {
-            GoalsListScreen(
-                navController = navController,
-                viewModel = goalsViewModel
+        ModalDrawerSheet {
+            Spacer(Modifier.height(12.dp))
+            val menuItems = listOf(
+                Screen.MainScreen, // Мы будем обрабатывать его как особый случай
+                Screen.StatisticsScreen,
+                Screen.GoalsScreen,
+                Screen.SettingsScreen
             )
-        }
-        composable(Screen.AddGoalScreen.route) {
-            AddGoalScreen(
-                navController = navController,
-                viewModel = goalsViewModel
-            )
+            menuItems.forEach { screen ->
+                // --- Логика для правильного выбора и навигации ---
+                val isSelected: Boolean
+                val routeToNavigate: String
+
+                if (screen is Screen.MainScreen) {
+                    // Пункт "Добавить" считается активным и на экране выбора, и на экране добавления
+                    isSelected = currentRoute == Screen.AddEntryChooserScreen.route || currentRoute?.startsWith(Screen.MainScreen.route) == true
+                    routeToNavigate = Screen.AddEntryChooserScreen.route
+                } else {
+                    isSelected = currentRoute == screen.route
+                    routeToNavigate = screen.route
+                }
+
+                NavigationDrawerItem(
+                    icon = { Icon(getIconForScreen(screen.route), contentDescription = null) },
+                    label = { Text(getLabelForScreen(screen.route)) },
+                    selected = isSelected,
+                    onClick = {
+                        navController.navigate(routeToNavigate) {
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                        closeDrawer()
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+            }
         }
     }
-}
+
+
+    @Composable
+    fun AppNavigationHost(
+        navController: NavHostController,
+        modifier: Modifier = Modifier,
+        mainViewModel: MainViewModel,
+        statisticsViewModel: StatisticsViewModel,
+        settingsViewModel: SettingsViewModel,
+        goalsViewModel: GoalsViewModel
+    ) {
+        NavHost(
+            navController = navController,
+            startDestination = Screen.AddEntryChooserScreen.route,
+            modifier = modifier
+        ) {
+            composable(Screen.AddEntryChooserScreen.route) {
+                AddEntryChooserScreen(navController = navController)
+            }
+            composable(
+                route = "${Screen.MainScreen.route}/{entryType}",
+                arguments = listOf(navArgument("entryType") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val entryType = backStackEntry.arguments?.getString("entryType")
+                    ?.let { EntryType.valueOf(it) } ?: EntryType.SAVING
+                MainScreen(
+                    viewModel = mainViewModel,
+                    entryType = entryType,
+                    navController = navController
+                )
+            }
+            composable(Screen.StatisticsScreen.route) {
+                StatisticsScreen(viewModel = statisticsViewModel)
+            }
+            composable(Screen.SettingsScreen.route) {
+                SettingsScreen(viewModel = settingsViewModel)
+            }
+            composable(Screen.GoalsScreen.route) {
+                GoalsListScreen(
+                    navController = navController,
+                    viewModel = goalsViewModel
+                )
+            }
+            composable(Screen.AddGoalScreen.route) {
+                AddGoalScreen(
+                    navController = navController,
+                    viewModel = goalsViewModel
+                )
+            }
+        }
+    }
 
 private fun getTitleForScreen(route: String?): String {
     return when (route) {
         Screen.MainScreen.route -> "Добавить"
         Screen.StatisticsScreen.route -> "Статистика"
         Screen.SettingsScreen.route -> "Настройки"
-        Screen.GoalsScreen.route -> "Мои Цели" // <<<--- Добавь
-        Screen.AddGoalScreen.route -> "Новая Цель" // <<<--- Добавь
+        Screen.GoalsScreen.route -> "Мои Цели"
+        Screen.AddGoalScreen.route -> "Новая Цель"
         else -> "My Savings"
     }
 }
