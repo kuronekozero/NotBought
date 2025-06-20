@@ -1,25 +1,20 @@
+// --- ЗАМЕНИ ВСЕ СОДЕРЖИМОЕ ФАЙЛА SettingsViewModel.kt НА ЭТОТ КОД ---
 package com.example.mysavings
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import android.content.Context
 import android.net.Uri
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.map
 
-
-class SettingsViewModel(private val settingsRepository: SettingsRepository,
-                        private val savingEntryDao: SavingEntryDao,
-                        private val context: Context,
-                        private val dao: SavingEntryDao) : ViewModel() {
+class SettingsViewModel(
+    private val settingsRepository: SettingsRepository,
+    private val savingEntryDao: SavingEntryDao,
+    private val context: Context
+) : ViewModel() {
 
     val themeOption: StateFlow<ThemeOption> = settingsRepository.themeOptionFlow
         .stateIn(
@@ -27,21 +22,6 @@ class SettingsViewModel(private val settingsRepository: SettingsRepository,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = ThemeOption.DARK
         )
-
-    private val allCategoryData: StateFlow<List<CategorySavings>> = dao.getSavingsPerCategory()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
-
-    val savingsData: StateFlow<List<CategorySavings>> = allCategoryData
-        .map { list -> list.filter { it.totalAmount > 0 } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    val wastesData: StateFlow<List<CategorySavings>> = allCategoryData
-        .map { list -> list.filter { it.totalAmount < 0 } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun setThemeOption(option: ThemeOption) {
         viewModelScope.launch {
@@ -107,7 +87,6 @@ class SettingsViewModel(private val settingsRepository: SettingsRepository,
     fun snackbarMessageShown() {
         _uiState.update { it.copy(snackbarMessage = null) }
     }
-
 }
 
 class SettingsViewModelFactory(

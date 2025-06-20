@@ -192,7 +192,7 @@ fun CategoryPieChartWithLegend(
                         Text(text = currencyFormatter.format(categoryData.totalAmount), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                     }
                     if (index < data.size - 1) {
-                        Divider(modifier = Modifier.padding(start = 28.dp, vertical = 4.dp))
+                        Divider(modifier = Modifier.padding(start = 28.dp).padding(vertical = 4.dp))
                     }
                 }
             }
