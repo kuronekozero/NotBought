@@ -33,7 +33,8 @@ import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.ShowChart
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
-
+import androidx.compose.material.icons.outlined.History
+import androidx.navigation.navArgument
 
 
 class MainActivity : ComponentActivity() {
@@ -59,6 +60,10 @@ class MainActivity : ComponentActivity() {
         GoalsViewModelFactory(goalDao, savingEntryDao)
     }
 
+    private val historyViewModel: HistoryViewModel by viewModels {
+        HistoryViewModelFactory(savingEntryDao, userCategoryDao)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -74,7 +79,8 @@ class MainActivity : ComponentActivity() {
                     mainViewModel = mainViewModel,
                     statisticsViewModel = statisticsViewModel,
                     settingsViewModel = settingsViewModel,
-                    goalsViewModel = goalsViewModel
+                    goalsViewModel = goalsViewModel,
+                    historyViewModel = historyViewModel
                 )
             }
     }
@@ -85,7 +91,8 @@ fun AppShell(
     mainViewModel: MainViewModel,
     statisticsViewModel: StatisticsViewModel,
     settingsViewModel: SettingsViewModel,
-    goalsViewModel: GoalsViewModel
+    goalsViewModel: GoalsViewModel,
+    historyViewModel: HistoryViewModel
 ) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -100,6 +107,7 @@ fun AppShell(
                 navController = navController,
                 currentRoute = currentRoute,
                 closeDrawer = { scope.launch { drawerState.close() } }
+
             )
         }
     ) {
@@ -117,7 +125,8 @@ fun AppShell(
                 mainViewModel = mainViewModel,
                 statisticsViewModel = statisticsViewModel,
                 settingsViewModel = settingsViewModel,
-                goalsViewModel = goalsViewModel
+                goalsViewModel = goalsViewModel,
+                historyViewModel = historyViewModel
             )
         }
     }
@@ -150,7 +159,8 @@ fun AppTopBar(currentRoute: String?, onNavigationIconClick: () -> Unit) {
         ModalDrawerSheet {
             Spacer(Modifier.height(12.dp))
             val menuItems = listOf(
-                Screen.MainScreen, // Мы будем обрабатывать его как особый случай
+                Screen.MainScreen,
+                Screen.HistoryScreen,
                 Screen.StatisticsScreen,
                 Screen.GoalsScreen,
                 Screen.SettingsScreen
@@ -197,7 +207,8 @@ fun AppTopBar(currentRoute: String?, onNavigationIconClick: () -> Unit) {
         mainViewModel: MainViewModel,
         statisticsViewModel: StatisticsViewModel,
         settingsViewModel: SettingsViewModel,
-        goalsViewModel: GoalsViewModel
+        goalsViewModel: GoalsViewModel,
+        historyViewModel: HistoryViewModel
     ) {
         NavHost(
             navController = navController,
@@ -237,6 +248,25 @@ fun AppTopBar(currentRoute: String?, onNavigationIconClick: () -> Unit) {
                     viewModel = goalsViewModel
                 )
             }
+            composable(Screen.HistoryScreen.route) {
+                HistoryScreen(
+                    viewModel = historyViewModel,
+                    navController = navController
+                )
+            }
+            composable(
+                route = "${Screen.EditEntryScreen.route}/{entryId}",
+                arguments = listOf(navArgument("entryId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val entryId = backStackEntry.arguments?.getInt("entryId")
+                entryId?.let {
+                    EditEntryScreen(
+                        navController = navController,
+                        viewModel = historyViewModel,
+                        entryId = it
+                    )
+                }
+            }
         }
     }
 
@@ -247,6 +277,7 @@ private fun getTitleForScreen(route: String?): String {
         Screen.SettingsScreen.route -> "Настройки"
         Screen.GoalsScreen.route -> "Мои Цели"
         Screen.AddGoalScreen.route -> "Новая Цель"
+        Screen.HistoryScreen.route -> "История"
         else -> "My Savings"
     }
 }
@@ -256,7 +287,8 @@ private fun getLabelForScreen(route: String): String {
         Screen.MainScreen.route -> "Добавить"
         Screen.StatisticsScreen.route -> "Статистика"
         Screen.SettingsScreen.route -> "Настройки"
-        Screen.GoalsScreen.route -> "Цели" // <<<--- Добавь
+        Screen.GoalsScreen.route -> "Цели"
+        Screen.HistoryScreen.route -> "История"
         else -> ""
     }
 }
@@ -268,6 +300,7 @@ private fun getIconForScreen(route: String): ImageVector {
         Screen.StatisticsScreen.route -> Icons.Outlined.ShowChart
         Screen.SettingsScreen.route -> Icons.Outlined.Settings
         Screen.GoalsScreen.route -> Icons.Outlined.Flag
+        Screen.HistoryScreen.route -> Icons.Outlined.History
         else -> Icons.Outlined.AddCircle
     }
 }}

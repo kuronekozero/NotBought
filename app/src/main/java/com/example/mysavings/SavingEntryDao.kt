@@ -6,6 +6,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
+import androidx.room.Delete
+import androidx.room.Update
 
 @Dao
 interface SavingEntryDao {
@@ -34,4 +36,13 @@ interface SavingEntryDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(entries: List<SavingEntry>)
+
+    @Update
+    suspend fun update(entry: SavingEntry)
+
+    @Delete
+    suspend fun delete(entry: SavingEntry)
+
+    @Query("SELECT * FROM saving_entries WHERE id = :id")
+    suspend fun getEntryById(id: Int): SavingEntry?
 }
