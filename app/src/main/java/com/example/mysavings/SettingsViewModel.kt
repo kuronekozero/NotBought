@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 class SettingsViewModel(
     private val settingsRepository: SettingsRepository,
     private val savingEntryDao: SavingEntryDao,
-    private val context: Context
+    private val context: Context,
 ) : ViewModel() {
 
     val themeOption: StateFlow<ThemeOption> = settingsRepository.themeOptionFlow
@@ -26,6 +26,12 @@ class SettingsViewModel(
     fun setThemeOption(option: ThemeOption) {
         viewModelScope.launch {
             settingsRepository.saveThemeOption(option)
+        }
+    }
+
+    fun onWelcomeDismissed() {
+        viewModelScope.launch {
+            settingsRepository.setWelcomeScreenSeen()
         }
     }
 

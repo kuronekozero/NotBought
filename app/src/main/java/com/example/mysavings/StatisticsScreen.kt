@@ -18,7 +18,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.mysavings.ui.theme.generateDistinctColors
 import java.text.NumberFormat
 import java.util.Locale
 import kotlin.math.abs
@@ -33,7 +32,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import com.example.mysavings.ui.theme.generateDistinctColors
+import com.example.mysavings.ui.theme.generateColorFromString
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.min
@@ -189,7 +188,7 @@ fun CategoryPieChartWithLegend(
     currencyFormatter: NumberFormat
 ) {
     val totalAmountAbs = remember(data) { data.sumOf { abs(it.totalAmount) } }
-    val chartColors = remember(data.size) { generateDistinctColors(data.size) }
+    val chartColors = remember(data) { data.map { generateColorFromString(it.categoryName) } }
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
     val selectedCategoryInfo = selectedIndex?.let { data.getOrNull(it) }
 

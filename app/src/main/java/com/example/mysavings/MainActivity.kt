@@ -35,6 +35,11 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.compose.material.icons.outlined.History
 import androidx.navigation.navArgument
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
 
 
 class MainActivity : ComponentActivity() {
@@ -75,14 +80,32 @@ class MainActivity : ComponentActivity() {
             }
 
             MySavingsTheme(darkTheme = useDarkTheme) {
-                AppShell(
-                    mainViewModel = mainViewModel,
-                    statisticsViewModel = statisticsViewModel,
-                    settingsViewModel = settingsViewModel,
-                    goalsViewModel = goalsViewModel,
-                    historyViewModel = historyViewModel
-                )
-            }
+                // Используем null как начальное состояние, чтобы обозначить "загрузку"
+                val hasSeenWelcome by settingsRepository.welcomeScreenSeenFlow.collectAsState(initial = null)
+
+                // Ждем, пока hasSeenWelcome не получит реальное значение (true или false)
+                when (hasSeenWelcome) {
+                    true -> {
+                        // Если пользователь уже видел экран, показываем основной интерфейс
+                        AppShell(
+                            mainViewModel = mainViewModel,
+                            statisticsViewModel = statisticsViewModel,
+                            settingsViewModel = settingsViewModel,
+                            goalsViewModel = goalsViewModel,
+                            historyViewModel = historyViewModel
+                        )
+                    }
+                    false -> {
+                        // Если пользователь новый, показываем приветствие
+                        WelcomeScreen(onDismiss = { settingsViewModel.onWelcomeDismissed() })
+                    }
+                    null -> {
+                        // Пока значение загружается, показываем пустой экран
+                        // Это происходит так быстро, что пользователь ничего не заметит
+                        Surface(modifier = Modifier.fillMaxSize()) { }
+                    }
+                }
+        }
     }
 }
 
