@@ -5,58 +5,72 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import java.time.DayOfWeek
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.temporal.TemporalAdjusters
+import java.time.temporal.ChronoUnit
+import kotlin.math.abs
+
+data class Projections(
+    val perWeek: Double = 0.0,
+    val perMonth: Double = 0.0,
+    val perHalfYear: Double = 0.0,
+    val perYear: Double = 0.0
+)
 
 class StatisticsViewModel(private val dao: SavingEntryDao) : ViewModel() {
 
     private val allEntriesFlow = dao.getAllEntries()
-        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val totalSaved: StateFlow<Double> = allEntriesFlow
         .map { entries -> entries.sumOf { it.cost } }
         .stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
 
-    val savedToday: StateFlow<Double> = allEntriesFlow
+    private val projectionsState: StateFlow<Pair<Projections, Projections>> = allEntriesFlow
         .map { entries ->
-            val startOfDay = LocalDate.now().atStartOfDay()
-            val endOfDay = LocalDateTime.now() // до текущего момента
-            entries.filter { it.date >= startOfDay && it.date <= endOfDay }.sumOf { it.cost }
-        }
-        .stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
+            val thirtyDaysAgo = LocalDateTime.now().minusDays(30)
+            val recentEntries = entries.filter { it.date >= thirtyDaysAgo }
 
-    val savedThisWeek: StateFlow<Double> = allEntriesFlow
-        .map { entries ->
-            val today = LocalDate.now()
-            val firstDayOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atStartOfDay()
-            val lastDayOfWeek = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY)).atTime(LocalTime.MAX)
-            entries.filter { it.date >= firstDayOfWeek && it.date <= lastDayOfWeek }.sumOf { it.cost }
-        }
-        .stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
+            if (recentEntries.isEmpty()) {
+                return@map Pair(Projections(), Projections())
+            }
 
-    val savedThisMonth: StateFlow<Double> = allEntriesFlow
-        .map { entries ->
-            val today = LocalDate.now()
-            val firstDayOfMonth = today.with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay()
-            val lastDayOfMonth = today.with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX)
-            entries.filter { it.date >= firstDayOfMonth && it.date <= lastDayOfMonth }.sumOf { it.cost }
-        }
-        .stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
+            val firstEntryDate = recentEntries.minOf { it.date }
+            val daysSpan = ChronoUnit.DAYS.between(firstEntryDate, LocalDateTime.now()).coerceAtLeast(1).toDouble()
 
-    val savedThisYear: StateFlow<Double> = allEntriesFlow
-        .map { entries ->
-            val today = LocalDate.now()
-            val firstDayOfYear = today.with(TemporalAdjusters.firstDayOfYear()).atStartOfDay()
-            val lastDayOfYear = today.with(TemporalAdjusters.lastDayOfYear()).atTime(LocalTime.MAX)
-            entries.filter { it.date >= firstDayOfYear && it.date <= lastDayOfYear }.sumOf { it.cost }
-        }
-        .stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
+            val totalSavings = recentEntries.filter { it.cost > 0 }.sumOf { it.cost }
+            val totalWastes = abs(recentEntries.filter { it.cost < 0 }.sumOf { it.cost })
 
+            val avgDailySaving = totalSavings / daysSpan
+            val avgDailyWaste = totalWastes / daysSpan
+
+            val savingsProjection = Projections(
+                perWeek = avgDailySaving * 7,
+                perMonth = avgDailySaving * 30,
+                perHalfYear = avgDailySaving * 182.5,
+                perYear = avgDailySaving * 365
+            )
+
+            val wastesProjection = Projections(
+                perWeek = avgDailyWaste * 7,
+                perMonth = avgDailyWaste * 30,
+                perHalfYear = avgDailyWaste * 182.5,
+                perYear = avgDailyWaste * 365
+            )
+
+            Pair(savingsProjection, wastesProjection)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Pair(Projections(), Projections()))
+
+    val savingsProjections: StateFlow<Projections> = projectionsState
+        .map { it.first }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Projections())
+
+    val wastesProjections: StateFlow<Projections> = projectionsState
+        .map { it.second }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Projections())
 
     private val allCategoryData: StateFlow<List<CategorySavings>> = dao.getSavingsPerCategory()
         .stateIn(

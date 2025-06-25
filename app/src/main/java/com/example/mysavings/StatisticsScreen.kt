@@ -23,17 +23,27 @@ import java.text.NumberFormat
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.atan2
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.dp
+import com.example.mysavings.ui.theme.generateDistinctColors
+import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.min
 
 
 @Composable
 fun StatisticsScreen(viewModel: StatisticsViewModel) {
     val totalSaved by viewModel.totalSaved.collectAsState()
-    val savedToday by viewModel.savedToday.collectAsState()
-    val savedThisWeek by viewModel.savedThisWeek.collectAsState()
-    val savedThisMonth by viewModel.savedThisMonth.collectAsState()
-    val savedThisYear by viewModel.savedThisYear.collectAsState()
-
+    val savingsProjections by viewModel.savingsProjections.collectAsState()
+    val wastesProjections by viewModel.wastesProjections.collectAsState()
     val savingsData by viewModel.savingsData.collectAsState()
     val wastesData by viewModel.wastesData.collectAsState()
 
@@ -43,21 +53,38 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         item {
-            Text("Общая статистика", style = MaterialTheme.typography.headlineMedium)
-            Spacer(modifier = Modifier.height(16.dp))
+            ProjectionCard(
+                title = "Прогноз экономии",
+                projections = savingsProjections,
+                currencyFormatter = currencyFormat,
+                accentColor = Color(0xFF4CAF50)
+            )
+        }
+        item {
+            ProjectionCard(
+                title = "Прогноз лишних трат",
+                projections = wastesProjections,
+                currencyFormatter = currencyFormat,
+                accentColor = Color(0xFFF44336)
+            )
+        }
+
+        item {
+            Divider()
+            Text(
+                "Общая статистика",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
             StatisticRow("Всего сэкономлено (чистыми):", currencyFormat.format(totalSaved))
-            StatisticRow("Сегодня (чистыми):", currencyFormat.format(savedToday))
-            StatisticRow("Эта неделя (чистыми):", currencyFormat.format(savedThisWeek))
-            StatisticRow("Этот месяц (чистыми):", currencyFormat.format(savedThisMonth))
-            StatisticRow("Этот год (чистыми):", currencyFormat.format(savedThisYear))
         }
 
         if (savingsData.isNotEmpty()) {
             item {
-                Spacer(modifier = Modifier.height(24.dp))
                 CategoryPieChartWithLegend(
                     title = "Сэкономлено по категориям",
                     data = savingsData,
@@ -68,7 +95,6 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
 
         if (wastesData.isNotEmpty()) {
             item {
-                Spacer(modifier = Modifier.height(24.dp))
                 CategoryPieChartWithLegend(
                     title = "Лишние траты по категориям",
                     data = wastesData,
@@ -79,6 +105,71 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
     }
 }
 
+@Composable
+fun ProjectionCard(
+    title: String,
+    projections: Projections,
+    currencyFormatter: NumberFormat,
+    accentColor: Color
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                color = accentColor
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                ProjectionValue(
+                    label = "Неделя",
+                    value = currencyFormatter.format(projections.perWeek)
+                )
+                ProjectionValue(
+                    label = "Месяц",
+                    value = currencyFormatter.format(projections.perMonth)
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                ProjectionValue(
+                    label = "Полгода",
+                    value = currencyFormatter.format(projections.perHalfYear)
+                )
+                ProjectionValue(
+                    label = "Год",
+                    value = currencyFormatter.format(projections.perYear)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ProjectionValue(label: String, value: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
 
 @Composable
 fun StatisticRow(label: String, value: String) {
