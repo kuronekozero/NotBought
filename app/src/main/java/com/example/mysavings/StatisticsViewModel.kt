@@ -17,6 +17,40 @@ import kotlinx.coroutines.flow.*
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.*
+import java.time.*
+import java.time.temporal.TemporalAdjusters
+import java.util.Locale
+import kotlin.math.abs
+import java.time.DayOfWeek
+
+
+data class SavingsSpendingDataPoint(
+    val label: String,
+    val savings: Double,
+    val spending: Double // Note: This will be a positive value
+)
+
+// New enum to control the bar chart's period
+enum class HistogramPeriod {
+    WEEKLY, MONTHLY
+}
+
+// Enum for the existing Line Chart period
+enum class TimePeriod {
+    WEEK, MONTH, YEAR
+}
+
+// Data class for the existing Line Chart
+data class NetSavingsDataPoint(
+    val date: LocalDate,
+    val amount: Double,
+    val label: String
+)
 
 data class Projections(
     val perWeek: Double = 0.0,
@@ -25,115 +59,197 @@ data class Projections(
     val perYear: Double = 0.0
 )
 
-class StatisticsViewModel(private val dao: SavingEntryDao) : ViewModel() {
 
-    private val allEntriesFlow = dao.getAllEntries()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+class StatisticsViewModel(private val savingEntryDao: SavingEntryDao) : ViewModel() {
 
-    val totalSaved: StateFlow<Double> = allEntriesFlow
+    private val allEntries: Flow<List<SavingEntry>> = savingEntryDao.getAllEntries()
+        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), replay = 1)
+
+    // --- EXISTING LOGIC ---
+
+    val totalSaved: StateFlow<Double> = allEntries
         .map { entries -> entries.sumOf { it.cost } }
-        .stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
-    private val projectionsState: StateFlow<Pair<Projections, Projections>> = allEntriesFlow
+    private val savingsEntries = allEntries.map { it.filter { entry -> entry.cost > 0 } }
+    private val wastesEntries = allEntries.map { it.filter { entry -> entry.cost < 0 } }
+
+    val savingsData: StateFlow<List<CategorySavings>> = savingsEntries
         .map { entries ->
-            val thirtyDaysAgo = LocalDateTime.now().minusDays(30)
-            val recentEntries = entries.filter { it.date >= thirtyDaysAgo }
-
-            if (recentEntries.isEmpty()) {
-                return@map Pair(Projections(), Projections())
-            }
-
-            val firstEntryDate = recentEntries.minOf { it.date }
-            val daysSpan = ChronoUnit.DAYS.between(firstEntryDate, LocalDateTime.now()).coerceAtLeast(1).toDouble()
-
-            val totalSavings = recentEntries.filter { it.cost > 0 }.sumOf { it.cost }
-            val totalWastes = abs(recentEntries.filter { it.cost < 0 }.sumOf { it.cost })
-
-            val avgDailySaving = totalSavings / daysSpan
-            val avgDailyWaste = totalWastes / daysSpan
-
-            val savingsProjection = Projections(
-                perWeek = avgDailySaving * 7,
-                perMonth = avgDailySaving * 30,
-                perHalfYear = avgDailySaving * 182.5,
-                perYear = avgDailySaving * 365
-            )
-
-            val wastesProjection = Projections(
-                perWeek = avgDailyWaste * 7,
-                perMonth = avgDailyWaste * 30,
-                perHalfYear = avgDailyWaste * 182.5,
-                perYear = avgDailyWaste * 365
-            )
-
-            Pair(savingsProjection, wastesProjection)
+            entries.groupBy { it.category }
+                .map { (category, entryList) ->
+                    CategorySavings(category, entryList.sumOf { it.cost })
+                }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Pair(Projections(), Projections()))
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val savingsProjections: StateFlow<Projections> = projectionsState
-        .map { it.first }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Projections())
+    val wastesData: StateFlow<List<CategorySavings>> = wastesEntries
+        .map { entries ->
+            entries.groupBy { it.category }
+                .map { (category, entryList) ->
+                    CategorySavings(category, entryList.sumOf { it.cost })
+                }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val wastesProjections: StateFlow<Projections> = projectionsState
-        .map { it.second }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Projections())
-
-    private val allCategoryData: StateFlow<List<CategorySavings>> = dao.getSavingsPerCategory()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
+    private fun calculateProjections(entries: List<SavingEntry>): Projections {
+        if (entries.isEmpty()) return Projections(0.0, 0.0, 0.0, 0.0)
+        val firstDay = entries.minOfOrNull { it.date.toLocalDate() } ?: LocalDate.now()
+        val days = ChronoUnit.DAYS.between(firstDay, LocalDate.now()).coerceAtLeast(1)
+        val total = entries.sumOf { it.cost }
+        val perDay = total / days
+        return Projections(
+            perWeek = perDay * 7,
+            perMonth = perDay * 30.4,
+            perHalfYear = perDay * 182.5,
+            perYear = perDay * 365
         )
+    }
 
-    val savingsData: StateFlow<List<CategorySavings>> = allCategoryData
-        .map { list -> list.filter { it.totalAmount > 0 } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val savingsProjections: StateFlow<Projections> = savingsEntries
+        .map { calculateProjections(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Projections())
 
-    val wastesData: StateFlow<List<CategorySavings>> = allCategoryData
-        .map { list -> list.filter { it.totalAmount < 0 } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val wastesProjections: StateFlow<Projections> = wastesEntries
+        .map { calculateProjections(it).let { p -> p.copy(perWeek = abs(p.perWeek), perMonth = abs(p.perMonth), perHalfYear = abs(p.perHalfYear), perYear = abs(p.perYear)) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Projections())
 
     private val _currentMonth = MutableStateFlow(YearMonth.now())
     val currentMonth: StateFlow<YearMonth> = _currentMonth.asStateFlow()
 
-    private val dateTimeRange = _currentMonth.map { month ->
-        // The very beginning of the first day of the month
-        val startDateTime = month.atDay(1).atStartOfDay()
-        // The very end of the last day of the month
-        val endDateTime = month.atEndOfMonth().atTime(LocalTime.MAX)
-        startDateTime to endDateTime
-    }
+    fun nextMonth() { _currentMonth.value = _currentMonth.value.plusMonths(1) }
 
-    val heatmapData: StateFlow<Map<LocalDate, Double>> = dateTimeRange
-        .flatMapLatest { (start, end) ->
-            // The call to the DAO is now correct.
-            dao.getEntriesForDateRange(start, end)
+    fun previousMonth() { _currentMonth.value = _currentMonth.value.minusMonths(1) }
+
+    val heatmapData: StateFlow<Map<LocalDate, Double>> = combine(allEntries, _currentMonth) { entries, month ->
+        entries
+            .filter { YearMonth.from(it.date) == month }
+            .groupBy { it.date.toLocalDate() }
+            .mapValues { it.value.sumOf { entry -> entry.cost } }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    private val _selectedTimePeriod = MutableStateFlow(TimePeriod.MONTH)
+    val selectedTimePeriod: StateFlow<TimePeriod> = _selectedTimePeriod.asStateFlow()
+
+    fun setTimePeriod(period: TimePeriod) { _selectedTimePeriod.value = period }
+
+    val netSavingsOverTimeData: StateFlow<List<NetSavingsDataPoint>> = combine(allEntries, _selectedTimePeriod) { entries, period ->
+        val now = LocalDate.now()
+        when (period) {
+            TimePeriod.WEEK -> {
+                val weekStart = now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                (0..6).map { i ->
+                    val day = weekStart.plusDays(i.toLong())
+                    val amount = entries.filter { it.date.toLocalDate() == day }.sumOf { it.cost }
+                    NetSavingsDataPoint(day, amount, day.format(DateTimeFormatter.ofPattern("E", Locale("ru"))))
+                }
+            }
+            TimePeriod.MONTH -> {
+                val monthStart = now.withDayOfMonth(1)
+                (0 until now.lengthOfMonth()).map { i ->
+                    val day = monthStart.plusDays(i.toLong())
+                    val amount = entries.filter { it.date.toLocalDate() == day }.sumOf { it.cost }
+                    NetSavingsDataPoint(day, amount, day.dayOfMonth.toString())
+                }
+            }
+            TimePeriod.YEAR -> {
+                val yearStart = now.withDayOfYear(1)
+                (0..11).map { i ->
+                    val month = yearStart.plusMonths(i.toLong())
+                    val amount = entries.filter { YearMonth.from(it.date) == YearMonth.from(month) }.sumOf { it.cost }
+                    NetSavingsDataPoint(month, amount, month.format(DateTimeFormatter.ofPattern("MMM", Locale("ru"))))
+                }
+            }
         }
-        .map { entries ->
-            entries.groupBy { it.date.toLocalDate() }
-                .mapValues { (_, dailyEntries) -> dailyEntries.sumOf { it.cost } }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // --- NEW LOGIC FOR SAVINGS/SPENDING HISTOGRAM ---
+    private val _histogramPeriod = MutableStateFlow(HistogramPeriod.MONTHLY)
+    val histogramPeriod: StateFlow<HistogramPeriod> = _histogramPeriod.asStateFlow()
+
+    val savingsAndSpendingHistogramData: StateFlow<List<SavingsSpendingDataPoint>> =
+        combine(allEntries, _histogramPeriod) { entries, period ->
+            processDataForHistogram(entries, period)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun setHistogramPeriod(period: HistogramPeriod) {
+        _histogramPeriod.value = period
+    }
+
+    private fun processDataForHistogram(
+        entries: List<SavingEntry>,
+        period: HistogramPeriod
+    ): List<SavingsSpendingDataPoint> {
+        if (entries.isEmpty()) {
+            return emptyList()
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyMap()
-        )
 
-    fun nextMonth() {
-        _currentMonth.value = _currentMonth.value.plusMonths(1)
+        val russianLocale = Locale("ru")
+        val now = LocalDate.now()
+        val firstEntryDate = entries.minOfOrNull { it.date.toLocalDate() } ?: now
+
+        return when (period) {
+            HistogramPeriod.MONTHLY -> {
+                val formatter = DateTimeFormatter.ofPattern("MMM yy", russianLocale)
+                val startMonth = YearMonth.from(firstEntryDate)
+                val endMonth = YearMonth.from(now)
+
+                val dataMap = entries.groupBy { YearMonth.from(it.date) }
+                    .mapValues { (_, monthEntries) ->
+                        val savings = monthEntries.filter { it.cost > 0 }.sumOf { it.cost }
+                        val spending = abs(monthEntries.filter { it.cost < 0 }.sumOf { it.cost })
+                        Pair(savings, spending)
+                    }
+
+                val monthSequence = generateSequence(startMonth) { it.plusMonths(1) }
+                    .takeWhile { it <= endMonth }
+
+                monthSequence.map { yearMonth ->
+                    val (savings, spending) = dataMap[yearMonth] ?: Pair(0.0, 0.0)
+                    SavingsSpendingDataPoint(
+                        label = yearMonth.format(formatter),
+                        savings = savings,
+                        spending = spending
+                    )
+                }.toList()
+            }
+            HistogramPeriod.WEEKLY -> {
+                val formatter = DateTimeFormatter.ofPattern("dd MMM", russianLocale)
+                val dayOfWeekAdjuster = TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)
+
+                val startWeek = firstEntryDate.with(dayOfWeekAdjuster)
+                val endWeek = now.with(dayOfWeekAdjuster)
+
+                val dataMap = entries.groupBy { it.date.toLocalDate().with(dayOfWeekAdjuster) }
+                    .mapValues { (_, weekEntries) ->
+                        val savings = weekEntries.filter { it.cost > 0 }.sumOf { it.cost }
+                        val spending = abs(weekEntries.filter { it.cost < 0 }.sumOf { it.cost })
+                        Pair(savings, spending)
+                    }
+
+                val weekSequence = generateSequence(startWeek) { it.plusWeeks(1) }
+                    .takeWhile { it <= endWeek }
+
+                weekSequence.map { weekStart ->
+                    val (savings, spending) = dataMap[weekStart] ?: Pair(0.0, 0.0)
+                    SavingsSpendingDataPoint(
+                        label = weekStart.format(formatter),
+                        savings = savings,
+                        spending = spending
+                    )
+                }.toList()
+            }
+        }
     }
-
-    fun previousMonth() {
-        _currentMonth.value = _currentMonth.value.minusMonths(1)
-    }
-
 }
 
-class StatisticsViewModelFactory(private val dao: SavingEntryDao) : ViewModelProvider.Factory {
+class StatisticsViewModelFactory(
+    private val savingEntryDao: SavingEntryDao
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(StatisticsViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return StatisticsViewModel(dao) as T
+            return StatisticsViewModel(savingEntryDao) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

@@ -1,4 +1,3 @@
-// --- ЗАМЕНИ ВСЕ СОДЕРЖИМОЕ ФАЙЛА SettingsViewModel.kt НА ЭТОТ КОД ---
 package com.example.mysavings
 
 import android.content.Context
@@ -20,7 +19,7 @@ class SettingsViewModel(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = ThemeOption.DARK
+            initialValue = ThemeOption.DARK // Or your default
         )
 
     fun setThemeOption(option: ThemeOption) {

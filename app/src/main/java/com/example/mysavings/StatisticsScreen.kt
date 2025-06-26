@@ -44,10 +44,43 @@ import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.atan2
+import androidx.compose.ui.platform.LocalDensity
 import kotlin.math.min
 import kotlin.math.pow
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.nativeCanvas
+import android.graphics.Paint
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.unit.sp
+import kotlin.math.max
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.*
+import java.time.*
+import java.time.temporal.ChronoUnit
+import java.time.temporal.TemporalAdjusters
+import kotlin.math.abs
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.unit.dp
+import kotlin.math.max
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.unit.Dp
 
-
+// In StatisticsScreen.kt
 
 @Composable
 fun StatisticsScreen(viewModel: StatisticsViewModel) {
@@ -59,10 +92,8 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
     val heatmapData by viewModel.heatmapData.collectAsState()
     val currentMonth by viewModel.currentMonth.collectAsState()
 
-    // State for the selected date in the heatmap
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
-    // When the month changes, clear the selected date
     LaunchedEffect(currentMonth) {
         selectedDate = null
     }
@@ -75,29 +106,17 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        item {
-            HeatmapCalendar(
-                data = heatmapData,
-                currentMonth = currentMonth,
-                selectedDate = selectedDate,
-                onDateSelected = { date ->
-                    // Toggle selection: if same date is clicked, deselect. Otherwise, select new date.
-                    selectedDate = if (selectedDate == date) null else date
-                },
-                onPreviousMonth = { viewModel.previousMonth() },
-                onNextMonth = { viewModel.nextMonth() }
-            )
+        // --- NEW ORDER STARTS HERE ---
 
-            // Animated card to show details for the selected date
-            DailyDetailCard(
-                visible = selectedDate != null,
-                date = selectedDate,
-                netAmount = selectedDate?.let { heatmapData[it] },
+        // 1. Total Net Savings Card
+        item {
+            TotalNetSavingsCard(
+                totalSaved = totalSaved,
                 currencyFormatter = currencyFormat
             )
         }
 
-        // --- EXISTING ITEMS ---
+        // 2. Projections Cards
         item {
             ProjectionCard(
                 title = "Прогноз экономии",
@@ -116,16 +135,52 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
         }
 
         item {
-            Divider()
-            Text(
-                "Общая статистика",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = 8.dp)
+            HeatmapCalendar(
+                data = heatmapData,
+                currentMonth = currentMonth,
+                selectedDate = selectedDate,
+                onDateSelected = { date ->
+                    selectedDate = if (selectedDate == date) null else date
+                },
+                onPreviousMonth = { viewModel.previousMonth() },
+                onNextMonth = { viewModel.nextMonth() }
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            StatisticRow("Всего сэкономлено (чистыми):", currencyFormat.format(totalSaved))
+
+            DailyDetailCard(
+                visible = selectedDate != null,
+                date = selectedDate,
+                netAmount = selectedDate?.let { heatmapData[it] },
+                currencyFormatter = currencyFormat
+            )
         }
 
+        // 4. Net Savings Line Chart
+        item {
+            val netSavingsData by viewModel.netSavingsOverTimeData.collectAsState()
+            val selectedPeriod by viewModel.selectedTimePeriod.collectAsState()
+
+            NetSavingsLineChartCard(
+                data = netSavingsData,
+                selectedPeriod = selectedPeriod,
+                onPeriodSelect = { viewModel.setTimePeriod(it) },
+                currencyFormatter = currencyFormat
+            )
+        }
+
+        // 5. Savings vs Spending Bar Chart
+        item {
+            val histogramData by viewModel.savingsAndSpendingHistogramData.collectAsState()
+            val histogramPeriod by viewModel.histogramPeriod.collectAsState()
+
+            SavingsAndSpendingBarChartCard(
+                data = histogramData,
+                selectedPeriod = histogramPeriod,
+                onPeriodSelect = { viewModel.setHistogramPeriod(it) },
+                currencyFormatter = currencyFormat
+            )
+        }
+
+        // 6. Savings by Category Pie Chart
         if (savingsData.isNotEmpty()) {
             item {
                 CategoryPieChartWithLegend(
@@ -136,6 +191,7 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
             }
         }
 
+        // 7. Wastes by Category Pie Chart
         if (wastesData.isNotEmpty()) {
             item {
                 CategoryPieChartWithLegend(
@@ -148,7 +204,6 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
     }
 }
 
-// --- UPDATED HeatmapCalendar ---
 @Composable
 fun HeatmapCalendar(
     data: Map<LocalDate, Double>,
@@ -161,7 +216,7 @@ fun HeatmapCalendar(
     val maxAbsValue = remember(data) { data.values.maxOfOrNull { abs(it) } ?: 1.0 }
     val daysInMonth = currentMonth.lengthOfMonth()
     val firstDayOfMonth = currentMonth.atDay(1)
-    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value // 1 for Monday, 7 for Sunday
+    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value
     val russianLocale = Locale("ru")
 
     Card(
@@ -225,7 +280,6 @@ fun HeatmapCalendar(
     }
 }
 
-// --- NEW DailyDetailCard Composable ---
 @Composable
 fun DailyDetailCard(
     visible: Boolean,
@@ -276,7 +330,6 @@ fun DailyDetailCard(
 }
 
 
-// --- CalendarHeader (No Changes) ---
 @Composable
 private fun CalendarHeader(
     month: String,
@@ -310,7 +363,6 @@ private fun RowScope.DayCell(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    // Определяем нашу палитру для тепловой карты
     val darkGreen = Color(0xFF1B5E20)
     val lightGreen = Color(0xFFA5D6A7)
     val darkRed = Color(0xFFB71C1C)
@@ -321,14 +373,8 @@ private fun RowScope.DayCell(
     val color = when {
         netAmount == null || netAmount == 0.0 -> neutralColor
         else -> {
-            // Коэффициент интенсивности. Меньше 1.0f делает градиент более заметным для малых значений.
-            // Можешь поэкспериментировать, изменив его на 0.4f или 0.6f.
             val intensityFactor = 0.5f
-
-            // Нормализуем значение от 0.0 до 1.0
             val normalizedValue = (abs(netAmount) / maxAbsValue).toFloat()
-
-            // Применяем нелинейное преобразование для лучшего визуального градиента
             val fraction = normalizedValue.pow(intensityFactor)
 
             if (netAmount > 0) {
@@ -341,7 +387,7 @@ private fun RowScope.DayCell(
 
     val textColor = when {
         netAmount == null || netAmount == 0.0 -> MaterialTheme.colorScheme.onSurfaceVariant
-        else -> Color.White // Белый текст для контраста на цветном фоне
+        else -> Color.White
     }
 
     Box(
@@ -445,6 +491,244 @@ fun StatisticRow(label: String, value: String) {
 }
 
 @Composable
+fun TotalNetSavingsCard(totalSaved: Double, currencyFormatter: NumberFormat) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Всего сэкономлено (чистыми)",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = currencyFormatter.format(totalSaved),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+    }
+}
+
+@Composable
+fun NetSavingsLineChartCard(
+    data: List<NetSavingsDataPoint>,
+    selectedPeriod: TimePeriod,
+    onPeriodSelect: (TimePeriod) -> Unit,
+    currencyFormatter: NumberFormat
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Net Savings Over Time",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            TabRow(
+                selectedTabIndex = selectedPeriod.ordinal,
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.primary,
+                divider = {}
+            ) {
+                TimePeriod.values().forEach { period ->
+                    Tab(
+                        selected = selectedPeriod == period,
+                        onClick = { onPeriodSelect(period) },
+                        text = { Text(period.name.lowercase().replaceFirstChar { it.titlecase() }) }
+                    )
+                }
+            }
+
+            if (data.isNotEmpty()) {
+                LineChart(
+                    data = data,
+                    currencyFormatter = currencyFormatter,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(250.dp)
+                        .padding(top = 16.dp)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(250.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No data available for the selected period.")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LineChart(
+    data: List<NetSavingsDataPoint>,
+    currencyFormatter: NumberFormat,
+    modifier: Modifier = Modifier,
+) {
+    val (yMin, yMax) = remember(data) {
+        val minVal = data.minOfOrNull { it.amount } ?: 0.0
+        val maxVal = data.maxOfOrNull { it.amount } ?: 0.0
+        Pair(min(minVal, 0.0), max(maxVal, 0.0))
+    }
+
+    val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+    val textColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val pointColor = MaterialTheme.colorScheme.primary
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val positiveLineColor = Color(0xFF4CAF50)
+    val negativeLineColor = Color(0xFFF44336)
+
+    val textPaint = remember {
+        Paint().apply {
+            textAlign = Paint.Align.RIGHT
+            textSize = 30f
+            color = 0
+        }
+    }
+
+    Canvas(modifier = modifier) {
+        val yAxisPadding = 100f
+        val xAxisPadding = 50f
+        val chartWidth = size.width - yAxisPadding
+        val chartHeight = size.height - xAxisPadding
+
+        drawYAxisWithGrid(yMin, yMax, currencyFormatter, yAxisPadding, chartHeight, gridColor, textPaint, textColor)
+        drawXAxisLabels(data, yAxisPadding, chartHeight, textPaint, textColor)
+
+        val yRange = (yMax - yMin).toFloat().coerceAtLeast(1f)
+        val xStep = chartWidth / (data.size - 1).coerceAtLeast(1)
+
+        val positivePath = Path()
+        val negativePath = Path()
+        var lastY: Float? = null
+
+        data.forEachIndexed { i, point ->
+            val x = yAxisPadding + i * xStep
+            val y = chartHeight - ((point.amount - yMin) / yRange * chartHeight).toFloat()
+            val currentLastY = lastY
+
+            if (point.amount >= 0) {
+                if (currentLastY != null && currentLastY < 0) {
+                    val intersectX = findZeroCrossing(i, data) * xStep + yAxisPadding
+                    negativePath.lineTo(intersectX, chartHeight - ((-yMin) / yRange * chartHeight).toFloat())
+                    positivePath.moveTo(intersectX, chartHeight - ((-yMin) / yRange * chartHeight).toFloat())
+                }
+                if (i == 0) positivePath.moveTo(x, y) else positivePath.lineTo(x, y)
+            } else {
+                if (currentLastY != null && currentLastY >= 0) {
+                    val intersectX = findZeroCrossing(i, data) * xStep + yAxisPadding
+                    positivePath.lineTo(intersectX, chartHeight - ((-yMin) / yRange * chartHeight).toFloat())
+                    negativePath.moveTo(intersectX, chartHeight - ((-yMin) / yRange * chartHeight).toFloat())
+                }
+                if (i == 0) negativePath.moveTo(x, y) else negativePath.lineTo(x, y)
+            }
+            lastY = point.amount.toFloat()
+        }
+
+        drawPath(positivePath, color = positiveLineColor, style = Stroke(width = 4.dp.toPx()))
+        drawPath(negativePath, color = negativeLineColor, style = Stroke(width = 4.dp.toPx()))
+
+        data.forEachIndexed { i, point ->
+            val x = yAxisPadding + i * xStep
+            val y = chartHeight - ((point.amount - yMin) / yRange * chartHeight).toFloat()
+            drawCircle(color = pointColor, radius = 8f, center = Offset(x, y))
+            drawCircle(color = surfaceColor, radius = 5f, center = Offset(x, y))
+        }
+    }
+}
+
+private fun findZeroCrossing(index: Int, data: List<NetSavingsDataPoint>): Float {
+    if (index == 0) return 0f
+    val p1 = data[index - 1]
+    val p2 = data[index]
+    if ((p1.amount * p2.amount) >= 0) return index.toFloat()
+
+    val x1 = (index - 1).toFloat()
+    val y1 = p1.amount.toFloat()
+    val x2 = index.toFloat()
+    val y2 = p2.amount.toFloat()
+
+    return x1 - y1 * (x2 - x1) / (y2 - y1)
+}
+
+
+private fun DrawScope.drawYAxisWithGrid(
+    yMin: Double, yMax: Double, currencyFormatter: NumberFormat,
+    yAxisPadding: Float, chartHeight: Float, gridColor: Color,
+    textPaint: Paint, textColor: Color
+) {
+    val numGridLines = 5
+    val yRange = (yMax - yMin).coerceAtLeast(1.0)
+
+    (0..numGridLines).forEach { i ->
+        val value = yMin + (yRange * i / numGridLines)
+        val y = chartHeight - (chartHeight * i / numGridLines)
+
+        drawLine(
+            color = gridColor,
+            start = Offset(yAxisPadding, y),
+            end = Offset(size.width, y),
+            strokeWidth = 1.dp.toPx()
+        )
+
+        drawContext.canvas.nativeCanvas.drawText(
+            currencyFormatter.format(value).replace(Regex("[^0-9,.\\-]"), ""),
+            yAxisPadding - 15f,
+            y + 5f,
+            textPaint.apply { color = textColor.value.hashCode() }
+        )
+    }
+}
+
+private fun DrawScope.drawXAxisLabels(
+    data: List<NetSavingsDataPoint>,
+    yAxisPadding: Float, chartHeight: Float, textPaint: Paint, textColor: Color
+) {
+    val xStep = (size.width - yAxisPadding) / (data.size - 1).coerceAtLeast(1)
+
+    val labelsToShow = data.filterIndexed { index, _ ->
+        when {
+            data.size <= 7 -> true
+            data.size <= 15 -> index % 2 == 0
+            else -> index % 4 == 0
+        }
+    }
+
+    labelsToShow.forEach { point ->
+        val index = data.indexOf(point)
+        val x = yAxisPadding + index * xStep
+        drawContext.canvas.nativeCanvas.save()
+        drawContext.canvas.nativeCanvas.rotate(-45f, x, chartHeight + 10f)
+        drawContext.canvas.nativeCanvas.drawText(
+            point.label,
+            x,
+            chartHeight + 40f,
+            textPaint.apply {
+                color = textColor.value.hashCode()
+                textAlign = Paint.Align.RIGHT
+            }
+        )
+        drawContext.canvas.nativeCanvas.restore()
+    }
+}
+
+@Composable
 fun CategoryPieChartWithLegend(
     title: String,
     data: List<CategorySavings>,
@@ -478,13 +762,16 @@ fun CategoryPieChartWithLegend(
                                 val dy = tapOffset.y - centerY
 
                                 if (dx * dx + dy * dy <= radius * radius) {
-                                    var tapAngleDeg = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
+                                    var tapAngleDeg =
+                                        Math.toDegrees(atan2(dy.toDouble(), dx.toDouble()))
+                                            .toFloat()
                                     tapAngleDeg = (tapAngleDeg + 450f) % 360f
 
                                     var currentAngleProgress = 0f
                                     var foundIdx: Int? = null
                                     for (i in data.indices) {
-                                        val proportion = (abs(data[i].totalAmount) / totalAmountAbs).toFloat()
+                                        val proportion =
+                                            (abs(data[i].totalAmount) / totalAmountAbs).toFloat()
                                         val sweep = 360f * proportion
                                         if (tapAngleDeg >= currentAngleProgress && tapAngleDeg < currentAngleProgress + sweep) {
                                             foundIdx = i
@@ -550,6 +837,258 @@ fun CategoryPieChartWithLegend(
                     if (index < data.size - 1) {
                         Divider(modifier = Modifier.padding(start = 28.dp).padding(vertical = 4.dp))
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SavingsAndSpendingBarChartCard(
+    data: List<SavingsSpendingDataPoint>,
+    selectedPeriod: HistogramPeriod,
+    onPeriodSelect: (HistogramPeriod) -> Unit,
+    currencyFormatter: NumberFormat
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Savings vs Spending",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            TabRow(
+                selectedTabIndex = selectedPeriod.ordinal,
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.primary,
+                divider = {}
+            ) {
+                HistogramPeriod.values().forEach { period ->
+                    Tab(
+                        selected = selectedPeriod == period,
+                        onClick = { onPeriodSelect(period) },
+                        text = { Text(period.name.lowercase().replaceFirstChar { it.titlecase() }) }
+                    )
+                }
+            }
+
+            if (data.isNotEmpty()) {
+                SavingsAndSpendingBarChart(
+                    data = data,
+                    currencyFormatter = currencyFormatter,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(250.dp)
+                        .padding(top = 16.dp)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(250.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No savings or spending data for this period.")
+                }
+            }
+        }
+    }
+}
+
+private fun DrawScope.drawBarChartYAxis(
+    maxAmount: Double,
+    currencyFormatter: NumberFormat,
+    yAxisPadding: Float,
+    chartHeight: Float,
+    gridColor: Color,
+    textColor: Color
+) {
+    val textPaint = Paint().apply {
+        textAlign = Paint.Align.RIGHT
+        textSize = 12.sp.toPx()
+        color = textColor.toArgb()
+    }
+
+    val numGridLines = 4
+    val yZero = chartHeight / 2
+    val availableHeight = chartHeight / 2
+
+    drawLine(
+        color = gridColor,
+        start = Offset(yAxisPadding, yZero),
+        end = Offset(size.width, yZero),
+        strokeWidth = 2.dp.toPx()
+    )
+    drawContext.canvas.nativeCanvas.drawText(
+        "0",
+        yAxisPadding - 10f,
+        yZero + 5f,
+        textPaint
+    )
+
+    (1..numGridLines).forEach { i ->
+        val value = maxAmount * i / numGridLines
+        val label = currencyFormatter.format(value).replace(Regex("[^\\d,.-kmM]"), "")
+
+        // Positive side (Savings)
+        val yTop = yZero - (availableHeight * i / numGridLines)
+        drawLine(
+            color = gridColor,
+            start = Offset(yAxisPadding, yTop),
+            end = Offset(size.width, yTop)
+        )
+        drawContext.canvas.nativeCanvas.drawText(
+            label,
+            yAxisPadding - 10f,
+            yTop + 5f,
+            textPaint
+        )
+
+        // Negative side (Spending)
+        val yBottom = yZero + (availableHeight * i / numGridLines)
+        drawLine(
+            color = gridColor,
+            start = Offset(yAxisPadding, yBottom),
+            end = Offset(size.width, yBottom)
+        )
+        drawContext.canvas.nativeCanvas.drawText(
+            label,
+            yAxisPadding - 10f,
+            yBottom + 5f,
+            textPaint
+        )
+    }
+}
+
+private fun DrawScope.drawBarChartXAxis(
+    data: List<SavingsSpendingDataPoint>,
+    yAxisPadding: Float,
+    chartHeight: Float,
+    totalBarWidth: Float,
+    textColor: Color
+) {
+    val textPaint = Paint().apply {
+        textAlign = Paint.Align.RIGHT
+        textSize = 12.sp.toPx()
+        color = textColor.toArgb()
+    }
+
+    data.forEachIndexed { i, point ->
+        val x = yAxisPadding + (i * totalBarWidth) + (totalBarWidth / 2)
+
+        if (point.savings > 0 || point.spending > 0) {
+            drawContext.canvas.nativeCanvas.save()
+            drawContext.canvas.nativeCanvas.rotate(-60f, x, chartHeight + 10f)
+            drawContext.canvas.nativeCanvas.drawText(
+                point.label,
+                x,
+                chartHeight + 45f,
+                textPaint
+            )
+            drawContext.canvas.nativeCanvas.restore()
+        }
+    }
+}
+
+
+@Composable
+private fun SavingsAndSpendingBarChart(
+    data: List<SavingsSpendingDataPoint>,
+    currencyFormatter: NumberFormat,
+    modifier: Modifier = Modifier
+) {
+    val maxAmount = remember(data) {
+        val maxSavings = data.maxOfOrNull { it.savings } ?: 0.0
+        val maxSpending = data.maxOfOrNull { it.spending } ?: 0.0
+        max(maxSavings, maxSpending).coerceAtLeast(1.0)
+    }
+
+    val savingsColor = Color(0xFF4CAF50)
+    val spendingColor = Color(0xFFF44336)
+    val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+    val textColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val scrollState = rememberScrollState()
+
+    // --- FIX STARTS HERE ---
+
+    // Access the current density to convert Dp to Px before the Canvas is drawn
+    val density = LocalDensity.current
+
+    // Define constants for chart dimensions
+    val barWidthDp = 32.dp
+    val yAxisPadding = 120f
+    val xAxisPadding = 80f
+
+    // Perform all density-dependent calculations here using the obtained density
+    val barWidth: Float
+    val totalBarWidth: Float
+    val totalCanvasWidthDp: Dp
+
+    with(density) {
+        barWidth = barWidthDp.toPx()
+        totalBarWidth = barWidth * 1.5f // bar width + spacing
+        val totalCanvasWidthInPx = (data.size * totalBarWidth) + yAxisPadding
+        totalCanvasWidthDp = totalCanvasWidthInPx.toDp()
+    }
+    // --- FIX ENDS HERE ---
+
+    Box(modifier = modifier.horizontalScroll(scrollState)) {
+        Canvas(
+            modifier = Modifier
+                .width(totalCanvasWidthDp) // Use the calculated Dp width
+                .fillMaxHeight()
+        ) {
+            val chartHeight = size.height - xAxisPadding
+            val yZero = chartHeight / 2
+            val availableHeight = chartHeight / 2
+
+            // The rest of the drawing logic remains the same, as it uses the
+            // pre-calculated pixel values.
+            drawBarChartYAxis(
+                maxAmount = maxAmount,
+                currencyFormatter = currencyFormatter,
+                yAxisPadding = yAxisPadding,
+                chartHeight = chartHeight,
+                gridColor = gridColor,
+                textColor = textColor
+            )
+
+            drawBarChartXAxis(
+                data = data,
+                yAxisPadding = yAxisPadding,
+                chartHeight = chartHeight,
+                totalBarWidth = totalBarWidth,
+                textColor = textColor
+            )
+
+            data.forEachIndexed { i, point ->
+                if (point.savings == 0.0 && point.spending == 0.0) {
+                    return@forEachIndexed
+                }
+
+                val x = yAxisPadding + (i * totalBarWidth) + (totalBarWidth - barWidth) / 2
+                val savingsHeight = (point.savings / maxAmount * availableHeight).toFloat()
+                val spendingHeight = (point.spending / maxAmount * availableHeight).toFloat()
+
+                if (point.savings > 0) {
+                    drawRect(
+                        color = savingsColor,
+                        topLeft = Offset(x, yZero - savingsHeight),
+                        size = Size(barWidth, savingsHeight)
+                    )
+                }
+
+                if (point.spending > 0) {
+                    drawRect(
+                        color = spendingColor,
+                        topLeft = Offset(x, yZero),
+                        size = Size(barWidth, spendingHeight)
+                    )
                 }
             }
         }

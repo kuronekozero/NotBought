@@ -1,4 +1,4 @@
-package com.example.mysavings // Замени com.example.mysavings на имя твоего пакета
+package com.example.mysavings
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
