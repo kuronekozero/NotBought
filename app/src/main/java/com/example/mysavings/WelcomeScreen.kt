@@ -20,25 +20,51 @@ fun WelcomeScreen(onDismiss: () -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(32.dp),
+                .padding(horizontal = 24.dp, vertical = 32.dp), // Adjusted horizontal padding for better look
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Headline for the welcome message
             Text(
                 text = "Добро пожаловать в My Savings!",
                 style = MaterialTheme.typography.headlineLarge,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 16.dp) // Add padding below the headline
             )
-            Spacer(modifier = Modifier.height(24.dp))
+
+            // First paragraph of the explanatory text
             Text(
-                text = "My Savings — это простое приложение, созданное для того, чтобы помочь тебе отслеживать свои сбережения и траты. Часто бывает сложно понять, куда уходят деньги, или увидеть реальный прогресс в накоплениях, особенно когда речь идёт об экономии от отказа от ненужных покупок. Его основная идея — показать тебе, как ты можешь копить деньги, и визуализировать эффект от сэкономленных средств. Ты сможешь отмечать свои финансовые цели и следить за тем, как сбережения помогают тебе их достигать. Это твой личный инструмент для более осознанного отношения к финансам. Давай начнем!",
+                text = "My Savings — это простое приложение, созданное для того, чтобы помочь тебе отслеживать свои сбережения и траты. Часто бывает сложно понять, куда уходят деньги, или увидеть реальный прогресс в накоплениях, особенно когда речь идёт об экономии от отказа от ненужных покупок.",
                 style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 8.dp) // Add horizontal padding for better text flow
             )
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp)) // Spacer between paragraphs
+
+            // Second paragraph of the explanatory text
+            Text(
+                text = "Его основная идея — показать тебе, как ты можешь копить деньги, и визуализировать эффект от сэкономленных средств. Ты сможешь отмечать свои финансовые цели и следить за тем, как сбережения помогают тебе их достигать.",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 8.dp) // Add horizontal padding for better text flow
+            )
+            Spacer(modifier = Modifier.height(24.dp)) // Spacer before the final call to action
+
+            // Final sentence acting as a call to action
+            Text(
+                text = "Это твой личный инструмент для более осознанного отношения к финансам.",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 8.dp) // Add horizontal padding for better text flow
+            )
+            Spacer(modifier = Modifier.height(32.dp)) // Spacer before the button
+
+            // Start button
             Button(
                 onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp) // Make the button slightly taller
             ) {
                 Text("Давай начнем!")
             }

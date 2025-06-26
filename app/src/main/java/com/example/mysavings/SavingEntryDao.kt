@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import androidx.room.Delete
 import androidx.room.Update
+import java.time.LocalDateTime
 
 @Dao
 interface SavingEntryDao {
@@ -45,4 +46,8 @@ interface SavingEntryDao {
 
     @Query("SELECT * FROM saving_entries WHERE id = :id")
     suspend fun getEntryById(id: Int): SavingEntry?
+
+    @Query("SELECT * FROM saving_entries WHERE date BETWEEN :startDateTime AND :endDateTime")
+    fun getEntriesForDateRange(startDateTime: LocalDateTime, endDateTime: LocalDateTime): Flow<List<SavingEntry>>
+
 }

@@ -3,6 +3,7 @@ package com.example.mysavings // Замени com.example.mysavings на имя 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.time.LocalDateTime
+import java.time.LocalDate
 
 @Entity(tableName = "saving_entries")
 data class SavingEntry(
@@ -13,3 +14,4 @@ data class SavingEntry(
     val category: String,
     val date: LocalDateTime = LocalDateTime.now()
 )
+fun LocalDateTime.toLocalDate(): LocalDate = this.toLocalDate()

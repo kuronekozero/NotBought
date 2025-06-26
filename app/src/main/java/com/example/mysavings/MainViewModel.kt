@@ -9,52 +9,53 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalTime
 
 class MainViewModel(
     private val savingEntryDao: SavingEntryDao,
-    private val userCategoryDao: UserCategoryDao // <<<--- Добавляем DAO категорий
+    private val userCategoryDao: UserCategoryDao
 ) : ViewModel() {
-
     var itemName by mutableStateOf("")
     var itemCost by mutableStateOf("")
+    var selectedCategoryName by mutableStateOf("")
+    private var selectedCategoryId: Int? = null
 
-    // Список категорий из базы данных
+    var newCategoryName by mutableStateOf("")
+    var showCategoryDialog by mutableStateOf(false)
+
+    var selectedDate by mutableStateOf(LocalDate.now())
+        private set
+
+    var showDatePickerDialog by mutableStateOf(false)
+        private set
+
     val categories: StateFlow<List<UserCategory>> = userCategoryDao.getAllCategories()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Выбранная категория (храним объект UserCategory или ее имя)
-    // Для простоты будем хранить имя, т.к. оно уникально
-    var selectedCategoryName by mutableStateOf("")
-        private set // Чтобы изменять только через onCategoryChange
-
-    // Состояние для диалога управления категориями
-    var showCategoryDialog by mutableStateOf(false)
-    var newCategoryNameInput by mutableStateOf("")
-
-
     init {
-        // При инициализации ViewModel, если список категорий не пуст,
-        // устанавливаем selectedCategoryName в первую из списка.
-        // Это также поможет, если пользователь удалит текущую выбранную категорию.
         viewModelScope.launch {
-            categories.collectLatest { categoryList ->
-                if (categoryList.isNotEmpty()) {
-                    // Если текущая selectedCategoryName невалидна или пуста, или не содержится в новом списке
-                    if (selectedCategoryName.isBlank() || categoryList.none { it.name == selectedCategoryName }) {
-                        selectedCategoryName = categoryList.first().name
-                    }
-                } else {
-                    selectedCategoryName = "" // Если категорий нет, сбрасываем
+            categories.collect { categoryList ->
+                if (selectedCategoryName.isBlank() && categoryList.isNotEmpty()) {
+                    onCategoryChange(categoryList.first())
                 }
             }
         }
     }
 
-    fun onItemNameChange(newName: String) { itemName = newName }
-    fun onItemCostChange(newCost: String) { itemCost = newCost }
-
-    fun onCategoryChange(newCategory: UserCategory) { // Теперь принимаем UserCategory
-        selectedCategoryName = newCategory.name
+    fun onItemNameChange(name: String) { itemName = name }
+    fun onItemCostChange(cost: String) { itemCost = cost }
+    fun onCategoryChange(category: UserCategory) {
+        selectedCategoryName = category.name
+        selectedCategoryId = category.id
     }
 
     fun saveSavingEntry(entryType: EntryType) {
@@ -62,66 +63,64 @@ class MainViewModel(
         if (itemName.isNotBlank() && costFromInput != null && costFromInput > 0 && selectedCategoryName.isNotBlank()) {
 
             val finalCost = if (entryType == EntryType.WASTE) {
-                -costFromInput // Сохраняем как отрицательное число
+                -costFromInput
             } else {
-                costFromInput // Сохраняем как положительное число
+                costFromInput
             }
+
+            val entryDateTime = LocalDateTime.of(selectedDate, LocalTime.now())
 
             val newEntry = SavingEntry(
                 itemName = itemName,
-                cost = finalCost, // <<<--- Используем finalCost
+                cost = finalCost,
                 category = selectedCategoryName,
-                date = LocalDateTime.now()
+                date = entryDateTime
             )
             viewModelScope.launch {
                 savingEntryDao.insert(newEntry)
-                // Очистка формы остается
                 itemName = ""
                 itemCost = ""
+                selectedDate = LocalDate.now()
             }
         } else {
-            println("Ошибка: Имя, стоимость и категория должны быть заполнены корректно.")
+            // Handle error case if needed
         }
     }
 
-    // --- Функции для управления категориями ---
-    fun openCategoryDialog() {
-        newCategoryNameInput = "" // Сбрасываем поле ввода при открытии
-        showCategoryDialog = true
+    fun onDateSelected(date: LocalDate) {
+        selectedDate = date
+        closeDatePickerDialog()
     }
 
-    fun closeCategoryDialog() {
-        showCategoryDialog = false
+    fun openDatePickerDialog() {
+        showDatePickerDialog = true
     }
 
-    fun onNewCategoryNameInputChange(name: String) {
-        newCategoryNameInput = name
+    fun closeDatePickerDialog() {
+        showDatePickerDialog = false
     }
 
-    fun addUserCategory() {
-        val name = newCategoryNameInput.trim()
-        if (name.isNotBlank()) {
+    fun openCategoryDialog() { showCategoryDialog = true }
+    fun closeCategoryDialog() { showCategoryDialog = false }
+    fun onNewCategoryNameChange(name: String) { newCategoryName = name }
+    fun addNewCategory() {
+        if (newCategoryName.isNotBlank()) {
             viewModelScope.launch {
-                userCategoryDao.insert(UserCategory(name = name))
-                newCategoryNameInput = "" // Очищаем поле после добавления
-                // Диалог можно не закрывать, чтобы пользователь мог добавить еще
+                userCategoryDao.insert(UserCategory(name = newCategoryName))
+                newCategoryName = ""
             }
         }
     }
-
-    fun deleteUserCategory(category: UserCategory) {
+    fun deleteCategory(category: UserCategory) {
         viewModelScope.launch {
             userCategoryDao.delete(category)
-            // Если удаленная категория была выбрана, нужно сбросить selectedCategoryName
-            // Логика в init { categories.collectLatest ... } должна это обработать
         }
     }
 }
 
-// Обновленная Фабрика для MainViewModel
 class MainViewModelFactory(
     private val savingEntryDao: SavingEntryDao,
-    private val userCategoryDao: UserCategoryDao // <<<--- Добавляем DAO категорий
+    private val userCategoryDao: UserCategoryDao
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(MainViewModel::class.java)) {

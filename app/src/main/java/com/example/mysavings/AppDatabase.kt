@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import androidx.room.TypeConverter
 import java.time.LocalDateTime
 
+
 class LocalDateTimeConverter {
     @TypeConverter
     fun fromTimestamp(value: Long?): LocalDateTime? {
@@ -92,7 +93,6 @@ object DefaultCategories {
         return listOf(
             UserCategory(name = "Еда и напитки"),
             UserCategory(name = "Развлечения"),
-            UserCategory(name = "Покупки (вещи)"),
             UserCategory(name = "Транспорт"),
             UserCategory(name = "Хобби"),
             UserCategory(name = "Здоровье"),

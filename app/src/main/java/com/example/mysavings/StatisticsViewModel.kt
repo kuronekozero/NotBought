@@ -11,6 +11,12 @@ import kotlinx.coroutines.flow.stateIn
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import kotlin.math.abs
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.LocalTime
 
 data class Projections(
     val perWeek: Double = 0.0,
@@ -86,6 +92,41 @@ class StatisticsViewModel(private val dao: SavingEntryDao) : ViewModel() {
     val wastesData: StateFlow<List<CategorySavings>> = allCategoryData
         .map { list -> list.filter { it.totalAmount < 0 } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _currentMonth = MutableStateFlow(YearMonth.now())
+    val currentMonth: StateFlow<YearMonth> = _currentMonth.asStateFlow()
+
+    private val dateTimeRange = _currentMonth.map { month ->
+        // The very beginning of the first day of the month
+        val startDateTime = month.atDay(1).atStartOfDay()
+        // The very end of the last day of the month
+        val endDateTime = month.atEndOfMonth().atTime(LocalTime.MAX)
+        startDateTime to endDateTime
+    }
+
+    val heatmapData: StateFlow<Map<LocalDate, Double>> = dateTimeRange
+        .flatMapLatest { (start, end) ->
+            // The call to the DAO is now correct.
+            dao.getEntriesForDateRange(start, end)
+        }
+        .map { entries ->
+            entries.groupBy { it.date.toLocalDate() }
+                .mapValues { (_, dailyEntries) -> dailyEntries.sumOf { it.cost } }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyMap()
+        )
+
+    fun nextMonth() {
+        _currentMonth.value = _currentMonth.value.plusMonths(1)
+    }
+
+    fun previousMonth() {
+        _currentMonth.value = _currentMonth.value.minusMonths(1)
+    }
+
 }
 
 class StatisticsViewModelFactory(private val dao: SavingEntryDao) : ViewModelProvider.Factory {
