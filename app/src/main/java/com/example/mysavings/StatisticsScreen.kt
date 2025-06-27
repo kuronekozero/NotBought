@@ -422,8 +422,9 @@ fun ProjectionCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        // Use the same background color as the calendar and other charts
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -463,6 +464,7 @@ fun ProjectionCard(
     }
 }
 
+
 @Composable
 fun ProjectionValue(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -494,25 +496,28 @@ fun StatisticRow(label: String, value: String) {
 fun TotalNetSavingsCard(totalSaved: Double, currencyFormatter: NumberFormat) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        // Use the same background color as the calendar and other charts
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = "Всего сэкономлено (чистыми)",
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = currencyFormatter.format(totalSaved),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -739,103 +744,110 @@ fun CategoryPieChartWithLegend(
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
     val selectedCategoryInfo = selectedIndex?.let { data.getOrNull(it) }
 
-    Column {
-        Text(title, style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(16.dp))
+    // This Card wrapper provides the consistent background and padding
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(title, style = MaterialTheme.typography.headlineSmall)
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            if (totalAmountAbs > 0) {
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(250.dp)
-                        .padding(16.dp)
-                        .pointerInput(data) {
-                            detectTapGestures { tapOffset ->
-                                val canvasWidth = size.width.toFloat()
-                                val canvasHeight = size.height.toFloat()
-                                val centerX = canvasWidth / 2
-                                val centerY = canvasHeight / 2
-                                val diameter = minOf(canvasWidth, canvasHeight) * 0.9f
-                                val radius = diameter / 2
-                                val dx = tapOffset.x - centerX
-                                val dy = tapOffset.y - centerY
-
-                                if (dx * dx + dy * dy <= radius * radius) {
-                                    var tapAngleDeg =
-                                        Math.toDegrees(atan2(dy.toDouble(), dx.toDouble()))
-                                            .toFloat()
-                                    tapAngleDeg = (tapAngleDeg + 450f) % 360f
-
-                                    var currentAngleProgress = 0f
-                                    var foundIdx: Int? = null
-                                    for (i in data.indices) {
-                                        val proportion =
-                                            (abs(data[i].totalAmount) / totalAmountAbs).toFloat()
-                                        val sweep = 360f * proportion
-                                        if (tapAngleDeg >= currentAngleProgress && tapAngleDeg < currentAngleProgress + sweep) {
-                                            foundIdx = i
-                                            break
-                                        }
-                                        currentAngleProgress += sweep
-                                    }
-                                    selectedIndex = if (foundIdx == selectedIndex) null else foundIdx
-                                } else {
-                                    selectedIndex = null
-                                }
-                            }
-                        }
-                ) {
-                    val canvasWidth = size.width
-                    val canvasHeight = size.height
-                    val diameter = minOf(canvasWidth, canvasHeight) * 0.9f
-                    val topLeft = Offset((canvasWidth - diameter) / 2, (canvasHeight - diameter) / 2)
-
-                    var startAngleCanvas = -90f
-                    data.forEachIndexed { index, categoryData ->
-                        val proportion = (abs(categoryData.totalAmount) / totalAmountAbs).toFloat()
-                        val sweepAngle = 360f * proportion
-                        val currentColor = chartColors.getOrElse(index) { Color.Gray }
-                        val finalColor = if (selectedIndex != null && selectedIndex != index) {
-                            currentColor.copy(alpha = 0.3f)
-                        } else {
-                            currentColor
-                        }
-                        drawArc(color = finalColor, startAngle = startAngleCanvas, sweepAngle = sweepAngle, useCenter = true, topLeft = topLeft, size = Size(diameter, diameter))
-                        if (selectedIndex == index) {
-                            drawArc(color = Color.Black, startAngle = startAngleCanvas, sweepAngle = sweepAngle, useCenter = true, topLeft = topLeft, size = Size(diameter, diameter), style = Stroke(width = 2.dp.toPx()))
-                        }
-                        startAngleCanvas += sweepAngle
-                    }
-                }
-            }
-            if (selectedIndex != null && selectedCategoryInfo != null) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(text = selectedCategoryInfo.categoryName, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                Text(text = currencyFormatter.format(selectedCategoryInfo.totalAmount), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Column(modifier = Modifier.fillMaxWidth()) {
-                data.forEachIndexed { index, categoryData ->
-                    val itemColor = chartColors.getOrElse(index) { Color.LightGray }
-                    val isSelected = selectedIndex == index
-                    val itemAlpha = if (selectedIndex != null && !isSelected) 0.5f else 1.0f
-                    Row(
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (totalAmountAbs > 0) {
+                    Canvas(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 6.dp)
-                            .alpha(itemAlpha),
-                        verticalAlignment = Alignment.CenterVertically
+                            .height(250.dp)
+                            .padding(16.dp)
+                            .pointerInput(data) {
+                                detectTapGestures { tapOffset ->
+                                    val canvasWidth = size.width.toFloat()
+                                    val canvasHeight = size.height.toFloat()
+                                    val centerX = canvasWidth / 2
+                                    val centerY = canvasHeight / 2
+                                    val diameter = minOf(canvasWidth, canvasHeight) * 0.9f
+                                    val radius = diameter / 2
+                                    val dx = tapOffset.x - centerX
+                                    val dy = tapOffset.y - centerY
+
+                                    if (dx * dx + dy * dy <= radius * radius) {
+                                        var tapAngleDeg =
+                                            Math.toDegrees(atan2(dy.toDouble(), dx.toDouble()))
+                                                .toFloat()
+                                        tapAngleDeg = (tapAngleDeg + 450f) % 360f
+
+                                        var currentAngleProgress = 0f
+                                        var foundIdx: Int? = null
+                                        for (i in data.indices) {
+                                            val proportion =
+                                                (abs(data[i].totalAmount) / totalAmountAbs).toFloat()
+                                            val sweep = 360f * proportion
+                                            if (tapAngleDeg >= currentAngleProgress && tapAngleDeg < currentAngleProgress + sweep) {
+                                                foundIdx = i
+                                                break
+                                            }
+                                            currentAngleProgress += sweep
+                                        }
+                                        selectedIndex = if (foundIdx == selectedIndex) null else foundIdx
+                                    } else {
+                                        selectedIndex = null
+                                    }
+                                }
+                            }
                     ) {
-                        Box(modifier = Modifier.size(18.dp).background(itemColor))
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(text = categoryData.categoryName, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
-                        Text(text = currencyFormatter.format(categoryData.totalAmount), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                        val canvasWidth = size.width
+                        val canvasHeight = size.height
+                        val diameter = minOf(canvasWidth, canvasHeight) * 0.9f
+                        val topLeft = Offset((canvasWidth - diameter) / 2, (canvasHeight - diameter) / 2)
+
+                        var startAngleCanvas = -90f
+                        data.forEachIndexed { index, categoryData ->
+                            val proportion = (abs(categoryData.totalAmount) / totalAmountAbs).toFloat()
+                            val sweepAngle = 360f * proportion
+                            val currentColor = chartColors.getOrElse(index) { Color.Gray }
+                            val finalColor = if (selectedIndex != null && selectedIndex != index) {
+                                currentColor.copy(alpha = 0.3f)
+                            } else {
+                                currentColor
+                            }
+                            drawArc(color = finalColor, startAngle = startAngleCanvas, sweepAngle = sweepAngle, useCenter = true, topLeft = topLeft, size = Size(diameter, diameter))
+                            if (selectedIndex == index) {
+                                drawArc(color = Color.Black, startAngle = startAngleCanvas, sweepAngle = sweepAngle, useCenter = true, topLeft = topLeft, size = Size(diameter, diameter), style = Stroke(width = 2.dp.toPx()))
+                            }
+                            startAngleCanvas += sweepAngle
+                        }
                     }
-                    if (index < data.size - 1) {
-                        Divider(modifier = Modifier.padding(start = 28.dp).padding(vertical = 4.dp))
+                }
+                if (selectedIndex != null && selectedCategoryInfo != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(text = selectedCategoryInfo.categoryName, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    Text(text = currencyFormatter.format(selectedCategoryInfo.totalAmount), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    data.forEachIndexed { index, categoryData ->
+                        val itemColor = chartColors.getOrElse(index) { Color.LightGray }
+                        val isSelected = selectedIndex == index
+                        val itemAlpha = if (selectedIndex != null && !isSelected) 0.5f else 1.0f
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp)
+                                .alpha(itemAlpha),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(modifier = Modifier.size(18.dp).background(itemColor))
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(text = categoryData.categoryName, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+                            Text(text = currencyFormatter.format(categoryData.totalAmount), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                        }
+                        if (index < data.size - 1) {
+                            Divider(modifier = Modifier.padding(start = 28.dp).padding(vertical = 4.dp))
+                        }
                     }
                 }
             }
@@ -949,7 +961,6 @@ private fun DrawScope.drawBarChartYAxis(
             textPaint
         )
 
-        // Negative side (Spending)
         val yBottom = yZero + (availableHeight * i / numGridLines)
         drawLine(
             color = gridColor,
@@ -1014,17 +1025,12 @@ private fun SavingsAndSpendingBarChart(
     val textColor = MaterialTheme.colorScheme.onSurfaceVariant
     val scrollState = rememberScrollState()
 
-    // --- FIX STARTS HERE ---
-
-    // Access the current density to convert Dp to Px before the Canvas is drawn
     val density = LocalDensity.current
 
-    // Define constants for chart dimensions
     val barWidthDp = 32.dp
     val yAxisPadding = 120f
     val xAxisPadding = 80f
 
-    // Perform all density-dependent calculations here using the obtained density
     val barWidth: Float
     val totalBarWidth: Float
     val totalCanvasWidthDp: Dp
@@ -1035,20 +1041,17 @@ private fun SavingsAndSpendingBarChart(
         val totalCanvasWidthInPx = (data.size * totalBarWidth) + yAxisPadding
         totalCanvasWidthDp = totalCanvasWidthInPx.toDp()
     }
-    // --- FIX ENDS HERE ---
 
     Box(modifier = modifier.horizontalScroll(scrollState)) {
         Canvas(
             modifier = Modifier
-                .width(totalCanvasWidthDp) // Use the calculated Dp width
+                .width(totalCanvasWidthDp)
                 .fillMaxHeight()
         ) {
             val chartHeight = size.height - xAxisPadding
             val yZero = chartHeight / 2
             val availableHeight = chartHeight / 2
 
-            // The rest of the drawing logic remains the same, as it uses the
-            // pre-calculated pixel values.
             drawBarChartYAxis(
                 maxAmount = maxAmount,
                 currencyFormatter = currencyFormatter,
