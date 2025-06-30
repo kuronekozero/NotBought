@@ -15,19 +15,6 @@ class SettingsViewModel(
     private val context: Context,
 ) : ViewModel() {
 
-    val themeOption: StateFlow<ThemeOption> = settingsRepository.themeOptionFlow
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = ThemeOption.DARK // Or your default
-        )
-
-    fun setThemeOption(option: ThemeOption) {
-        viewModelScope.launch {
-            settingsRepository.saveThemeOption(option)
-        }
-    }
-
     fun onWelcomeDismissed() {
         viewModelScope.launch {
             settingsRepository.setWelcomeScreenSeen()
