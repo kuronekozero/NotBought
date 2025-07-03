@@ -59,6 +59,10 @@ data class Projections(
     val perYear: Double = 0.0
 )
 
+// Add enum for new period selector
+enum class DualBarChartPeriod {
+    WEEK, MONTH, YEAR
+}
 
 class StatisticsViewModel(private val savingEntryDao: SavingEntryDao) : ViewModel() {
 
@@ -241,6 +245,92 @@ class StatisticsViewModel(private val savingEntryDao: SavingEntryDao) : ViewMode
             }
         }
     }
+
+    // --- DUAL BAR CHART PERIOD STATE ---
+    private val _dualBarChartPeriod = MutableStateFlow(DualBarChartPeriod.WEEK)
+    val dualBarChartPeriod: StateFlow<DualBarChartPeriod> = _dualBarChartPeriod.asStateFlow()
+
+    fun setDualBarChartPeriod(period: DualBarChartPeriod) { _dualBarChartPeriod.value = period }
+
+    // State for current week/month/year navigation
+    private val _currentDualBarChartDate = MutableStateFlow(LocalDate.now())
+    val currentDualBarChartDate: StateFlow<LocalDate> = _currentDualBarChartDate.asStateFlow()
+
+    fun nextDualBarChartPeriod() {
+        when (_dualBarChartPeriod.value) {
+            DualBarChartPeriod.WEEK -> _currentDualBarChartDate.value = _currentDualBarChartDate.value.plusWeeks(1)
+            DualBarChartPeriod.MONTH -> _currentDualBarChartDate.value = _currentDualBarChartDate.value.plusMonths(1)
+            DualBarChartPeriod.YEAR -> _currentDualBarChartDate.value = _currentDualBarChartDate.value.plusYears(1)
+        }
+    }
+    fun previousDualBarChartPeriod() {
+        when (_dualBarChartPeriod.value) {
+            DualBarChartPeriod.WEEK -> _currentDualBarChartDate.value = _currentDualBarChartDate.value.minusWeeks(1)
+            DualBarChartPeriod.MONTH -> _currentDualBarChartDate.value = _currentDualBarChartDate.value.minusMonths(1)
+            DualBarChartPeriod.YEAR -> _currentDualBarChartDate.value = _currentDualBarChartDate.value.minusYears(1)
+        }
+    }
+
+    // Expose data for the dual bar chart
+    val dualBarChartData: StateFlow<List<SavingsSpendingDataPoint>> = combine(
+        allEntries, dualBarChartPeriod, currentDualBarChartDate
+    ) { entries, period, refDate ->
+        when (period) {
+            DualBarChartPeriod.WEEK -> {
+                // Always 7 days, Mon-Sun of the week containing refDate
+                val weekStart = refDate.with(java.time.DayOfWeek.MONDAY)
+                (0..6).map { i ->
+                    val day = weekStart.plusDays(i.toLong())
+                    val dayEntries = entries.filter { it.date.toLocalDate() == day }
+                    val savings = dayEntries.filter { it.cost > 0 }.sumOf { it.cost }
+                    val spending = dayEntries.filter { it.cost < 0 }.sumOf { it.cost }.let { kotlin.math.abs(it) }
+                    SavingsSpendingDataPoint(
+                        label = day.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale("ru")),
+                        savings = savings,
+                        spending = spending
+                    )
+                }
+            }
+            DualBarChartPeriod.MONTH -> {
+                // Always 4-6 weeks in the month containing refDate
+                val month = java.time.YearMonth.from(refDate)
+                val firstDay = month.atDay(1)
+                val lastDay = month.atEndOfMonth()
+                val weeks = mutableListOf<Pair<LocalDate, LocalDate>>()
+                var weekStart = firstDay.with(java.time.DayOfWeek.MONDAY)
+                while (weekStart <= lastDay) {
+                    val weekEnd = weekStart.plusDays(6).coerceAtMost(lastDay)
+                    weeks.add(weekStart to weekEnd)
+                    weekStart = weekStart.plusWeeks(1)
+                }
+                weeks.map { (start, end) ->
+                    val weekEntries = entries.filter { it.date.toLocalDate() in start..end }
+                    val savings = weekEntries.filter { it.cost > 0 }.sumOf { it.cost }
+                    val spending = weekEntries.filter { it.cost < 0 }.sumOf { it.cost }.let { kotlin.math.abs(it) }
+                    SavingsSpendingDataPoint(
+                        label = "${start.dayOfMonth}-${end.dayOfMonth}",
+                        savings = savings,
+                        spending = spending
+                    )
+                }
+            }
+            DualBarChartPeriod.YEAR -> {
+                // Always 12 months in the year containing refDate
+                val year = refDate.year
+                (1..12).map { monthNum ->
+                    val ym = java.time.YearMonth.of(year, monthNum)
+                    val monthEntries = entries.filter { java.time.YearMonth.from(it.date) == ym }
+                    val savings = monthEntries.filter { it.cost > 0 }.sumOf { it.cost }
+                    val spending = monthEntries.filter { it.cost < 0 }.sumOf { it.cost }.let { kotlin.math.abs(it) }
+                    SavingsSpendingDataPoint(
+                        label = ym.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale("ru")),
+                        savings = savings,
+                        spending = spending
+                    )
+                }
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }
 
 class StatisticsViewModelFactory(

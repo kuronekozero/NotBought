@@ -79,6 +79,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.zIndex
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.layout.onSizeChanged
 
 // In StatisticsScreen.kt
 
@@ -169,15 +173,7 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
 
         // 5. Savings vs Spending Bar Chart
         item {
-            val histogramData by viewModel.savingsAndSpendingHistogramData.collectAsState()
-            val histogramPeriod by viewModel.histogramPeriod.collectAsState()
-
-            SavingsAndSpendingBarChartCard(
-                data = histogramData,
-                selectedPeriod = histogramPeriod,
-                onPeriodSelect = { viewModel.setHistogramPeriod(it) },
-                currencyFormatter = currencyFormat
-            )
+            DualBarChartCard(viewModel = viewModel)
         }
 
         // 6. Savings by Category Pie Chart
@@ -856,47 +852,72 @@ fun CategoryPieChartWithLegend(
 }
 
 @Composable
-fun SavingsAndSpendingBarChartCard(
-    data: List<SavingsSpendingDataPoint>,
-    selectedPeriod: HistogramPeriod,
-    onPeriodSelect: (HistogramPeriod) -> Unit,
-    currencyFormatter: NumberFormat
-) {
+fun DualBarChartCard(viewModel: StatisticsViewModel) {
+    val period by viewModel.dualBarChartPeriod.collectAsState()
+    val data by viewModel.dualBarChartData.collectAsState()
+    val refDate by viewModel.currentDualBarChartDate.collectAsState()
+    val currencyFormat = remember { java.text.NumberFormat.getCurrencyInstance(java.util.Locale("ru", "RU")) }
+    val allZero = data.all { it.savings == 0.0 && it.spending == 0.0 }
+
+    // --- Compact header layout ---
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Savings vs Spending",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            TabRow(
-                selectedTabIndex = selectedPeriod.ordinal,
-                containerColor = Color.Transparent,
-                contentColor = MaterialTheme.colorScheme.primary,
-                divider = {}
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                HistogramPeriod.values().forEach { period ->
-                    Tab(
-                        selected = selectedPeriod == period,
-                        onClick = { onPeriodSelect(period) },
-                        text = { Text(period.name.lowercase().replaceFirstChar { it.titlecase() }) }
-                    )
+                IconButton(
+                    onClick = { viewModel.previousDualBarChartPeriod() },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous period")
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    TabRow(
+                        selectedTabIndex = period.ordinal,
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        divider = {},
+                        modifier = Modifier.height(36.dp)
+                    ) {
+                        DualBarChartPeriod.values().forEach { p ->
+                            Tab(
+                                selected = period == p,
+                                onClick = { viewModel.setDualBarChartPeriod(p) },
+                                text = { Text(
+                                    when (p) {
+                                        DualBarChartPeriod.WEEK -> "Неделя"
+                                        DualBarChartPeriod.MONTH -> "Месяц"
+                                        DualBarChartPeriod.YEAR -> "Год"
+                                    },
+                                    fontSize = 14.sp,
+                                    maxLines = 1
+                                ) }
+                            )
+                        }
+                    }
+                }
+                IconButton(
+                    onClick = { viewModel.nextDualBarChartPeriod() },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next period")
                 }
             }
-
-            if (data.isNotEmpty()) {
-                SavingsAndSpendingBarChart(
+            Spacer(modifier = Modifier.height(12.dp))
+            if (!allZero) {
+                DualBarChart(
                     data = data,
-                    currencyFormatter = currencyFormatter,
+                    currencyFormatter = currencyFormat,
+                    period = period,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(250.dp)
-                        .padding(top = 16.dp)
                 )
             } else {
                 Box(
@@ -905,179 +926,94 @@ fun SavingsAndSpendingBarChartCard(
                         .height(250.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No savings or spending data for this period.")
+                    Text("Нет данных для этого периода.")
                 }
             }
         }
     }
 }
 
-private fun DrawScope.drawBarChartYAxis(
-    maxAmount: Double,
-    currencyFormatter: NumberFormat,
-    yAxisPadding: Float,
-    chartHeight: Float,
-    gridColor: Color,
-    textColor: Color
-) {
-    val textPaint = Paint().apply {
-        textAlign = Paint.Align.RIGHT
-        textSize = 12.sp.toPx()
-        color = textColor.toArgb()
-    }
-
-    val numGridLines = 4
-    val yZero = chartHeight / 2
-    val availableHeight = chartHeight / 2
-
-    drawLine(
-        color = gridColor,
-        start = Offset(yAxisPadding, yZero),
-        end = Offset(size.width, yZero),
-        strokeWidth = 2.dp.toPx()
-    )
-    drawContext.canvas.nativeCanvas.drawText(
-        "0",
-        yAxisPadding - 10f,
-        yZero + 5f,
-        textPaint
-    )
-
-    (1..numGridLines).forEach { i ->
-        val value = maxAmount * i / numGridLines
-        val label = currencyFormatter.format(value).replace(Regex("[^\\d,.-kmM]"), "")
-
-        // Positive side (Savings)
-        val yTop = yZero - (availableHeight * i / numGridLines)
-        drawLine(
-            color = gridColor,
-            start = Offset(yAxisPadding, yTop),
-            end = Offset(size.width, yTop)
-        )
-        drawContext.canvas.nativeCanvas.drawText(
-            label,
-            yAxisPadding - 10f,
-            yTop + 5f,
-            textPaint
-        )
-
-        val yBottom = yZero + (availableHeight * i / numGridLines)
-        drawLine(
-            color = gridColor,
-            start = Offset(yAxisPadding, yBottom),
-            end = Offset(size.width, yBottom)
-        )
-        drawContext.canvas.nativeCanvas.drawText(
-            label,
-            yAxisPadding - 10f,
-            yBottom + 5f,
-            textPaint
-        )
-    }
-}
-
-private fun DrawScope.drawBarChartXAxis(
-    data: List<SavingsSpendingDataPoint>,
-    yAxisPadding: Float,
-    chartHeight: Float,
-    totalBarWidth: Float,
-    textColor: Color
-) {
-    val textPaint = Paint().apply {
-        textAlign = Paint.Align.RIGHT
-        textSize = 12.sp.toPx()
-        color = textColor.toArgb()
-    }
-
-    data.forEachIndexed { i, point ->
-        val x = yAxisPadding + (i * totalBarWidth) + (totalBarWidth / 2)
-
-        if (point.savings > 0 || point.spending > 0) {
-            drawContext.canvas.nativeCanvas.save()
-            drawContext.canvas.nativeCanvas.rotate(-60f, x, chartHeight + 10f)
-            drawContext.canvas.nativeCanvas.drawText(
-                point.label,
-                x,
-                chartHeight + 45f,
-                textPaint
-            )
-            drawContext.canvas.nativeCanvas.restore()
-        }
-    }
-}
-
-
 @Composable
-private fun SavingsAndSpendingBarChart(
+private fun DualBarChart(
     data: List<SavingsSpendingDataPoint>,
-    currencyFormatter: NumberFormat,
+    currencyFormatter: java.text.NumberFormat,
+    period: DualBarChartPeriod,
     modifier: Modifier = Modifier
 ) {
     val maxAmount = remember(data) {
         val maxSavings = data.maxOfOrNull { it.savings } ?: 0.0
         val maxSpending = data.maxOfOrNull { it.spending } ?: 0.0
-        max(maxSavings, maxSpending).coerceAtLeast(1.0)
+        maxOf(maxSavings, maxSpending).coerceAtLeast(1.0)
     }
-
     val savingsColor = Color(0xFF4CAF50)
     val spendingColor = Color(0xFFF44336)
     val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
     val textColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val scrollState = rememberScrollState()
-
     val density = LocalDensity.current
+    var selectedBar by remember { mutableStateOf<Int?>(null) }
 
-    val barWidthDp = 32.dp
-    val yAxisPadding = 120f
-    val xAxisPadding = 80f
+    BoxWithConstraints(modifier = modifier) {
+        val chartWidthPx = with(density) { maxWidth.toPx() }
+        val barCount = data.size
+        val yAxisPadding = 60f
+        val xAxisPadding = 40f
+        val availableWidth = chartWidthPx - yAxisPadding
+        // Calculate bar width and spacing so all bars fit and are centered
+        val minBarWidthPx = with(density) { 20.dp.toPx() }
+        val maxBarWidthPx = with(density) { 48.dp.toPx() }
+        val spacingPx = with(density) { 8.dp.toPx() }
+        val totalSpacing = spacingPx * (barCount - 1)
+        var barWidth = ((availableWidth - totalSpacing) / barCount).coerceIn(minBarWidthPx, maxBarWidthPx)
+        var actualSpacing = if (barCount > 1) ((availableWidth - barWidth * barCount) / (barCount - 1)).coerceAtLeast(0f) else 0f
+        // For month, center the bars
+        val totalBarsWidth = barWidth * barCount + actualSpacing * (barCount - 1)
+        val startX = yAxisPadding + if (period == DualBarChartPeriod.MONTH) ((availableWidth - totalBarsWidth) / 2f).coerceAtLeast(0f) else 0f
 
-    val barWidth: Float
-    val totalBarWidth: Float
-    val totalCanvasWidthDp: Dp
-
-    with(density) {
-        barWidth = barWidthDp.toPx()
-        totalBarWidth = barWidth * 1.5f // bar width + spacing
-        val totalCanvasWidthInPx = (data.size * totalBarWidth) + yAxisPadding
-        totalCanvasWidthDp = totalCanvasWidthInPx.toDp()
-    }
-
-    Box(modifier = modifier.horizontalScroll(scrollState)) {
-        Canvas(
-            modifier = Modifier
-                .width(totalCanvasWidthDp)
-                .fillMaxHeight()
-        ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
             val chartHeight = size.height - xAxisPadding
-            val yZero = chartHeight / 2
-            val availableHeight = chartHeight / 2
-
-            drawBarChartYAxis(
-                maxAmount = maxAmount,
-                currencyFormatter = currencyFormatter,
-                yAxisPadding = yAxisPadding,
-                chartHeight = chartHeight,
-                gridColor = gridColor,
-                textColor = textColor
-            )
-
-            drawBarChartXAxis(
-                data = data,
-                yAxisPadding = yAxisPadding,
-                chartHeight = chartHeight,
-                totalBarWidth = totalBarWidth,
-                textColor = textColor
-            )
-
-            data.forEachIndexed { i, point ->
-                if (point.savings == 0.0 && point.spending == 0.0) {
-                    return@forEachIndexed
+            val yZero = chartHeight * 0.5f
+            val availableHeight = chartHeight * 0.45f
+            val numGridLines = 4
+            val textPaint = android.graphics.Paint().apply {
+                textAlign = android.graphics.Paint.Align.RIGHT
+                textSize = 12.sp.toPx()
+                color = textColor.toArgb()
+            }
+            for (i in 0..numGridLines) {
+                val value = maxAmount * i / numGridLines
+                val yUp = yZero - (availableHeight * i / numGridLines)
+                val yDown = yZero + (availableHeight * i / numGridLines)
+                drawLine(
+                    color = gridColor,
+                    start = Offset(yAxisPadding, yUp),
+                    end = Offset(size.width, yUp),
+                    strokeWidth = 1.dp.toPx()
+                )
+                drawContext.canvas.nativeCanvas.drawText(
+                    currencyFormatter.format(value),
+                    yAxisPadding - 8f,
+                    yUp + 5f,
+                    textPaint
+                )
+                if (i > 0) {
+                    drawLine(
+                        color = gridColor,
+                        start = Offset(yAxisPadding, yDown),
+                        end = Offset(size.width, yDown),
+                        strokeWidth = 1.dp.toPx()
+                    )
+                    drawContext.canvas.nativeCanvas.drawText(
+                        currencyFormatter.format(value),
+                        yAxisPadding - 8f,
+                        yDown + 5f,
+                        textPaint
+                    )
                 }
-
-                val x = yAxisPadding + (i * totalBarWidth) + (totalBarWidth - barWidth) / 2
+            }
+            data.forEachIndexed { i, point ->
+                val x = startX + i * (barWidth + actualSpacing)
                 val savingsHeight = (point.savings / maxAmount * availableHeight).toFloat()
                 val spendingHeight = (point.spending / maxAmount * availableHeight).toFloat()
-
                 if (point.savings > 0) {
                     drawRect(
                         color = savingsColor,
@@ -1085,7 +1021,6 @@ private fun SavingsAndSpendingBarChart(
                         size = Size(barWidth, savingsHeight)
                     )
                 }
-
                 if (point.spending > 0) {
                     drawRect(
                         color = spendingColor,
@@ -1093,7 +1028,63 @@ private fun SavingsAndSpendingBarChart(
                         size = Size(barWidth, spendingHeight)
                     )
                 }
+                // X axis label
+                drawContext.canvas.nativeCanvas.save()
+                drawContext.canvas.nativeCanvas.rotate(-45f, x + barWidth / 2, chartHeight + 18f)
+                drawContext.canvas.nativeCanvas.drawText(
+                    point.label,
+                    x + barWidth / 2,
+                    chartHeight + 28f,
+                    textPaint
+                )
+                drawContext.canvas.nativeCanvas.restore()
+            }
+            drawLine(
+                color = textColor,
+                start = Offset(yAxisPadding, yZero),
+                end = Offset(size.width, yZero),
+                strokeWidth = 2.dp.toPx()
+            )
+        }
+        // --- Bar tap overlay ---
+        if (selectedBar != null && selectedBar in data.indices) {
+            val point = data[selectedBar!!]
+            val x = startX + selectedBar!! * (barWidth + actualSpacing)
+            Box(
+                modifier = Modifier
+                    .offset { IntOffset(x.toInt(), 0) }
+                    .padding(top = 8.dp)
+                    .zIndex(2f)
+                    .align(Alignment.TopStart)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 8.dp,
+                    shadowElevation = 8.dp,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(point.label, style = MaterialTheme.typography.labelLarge)
+                        if (point.savings > 0) Text("+${currencyFormatter.format(point.savings)}", color = savingsColor, style = MaterialTheme.typography.bodyLarge)
+                        if (point.spending > 0) Text("-${currencyFormatter.format(point.spending)}", color = spendingColor, style = MaterialTheme.typography.bodyLarge)
+                        if (point.savings == 0.0 && point.spending == 0.0) Text("Нет данных", style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
             }
         }
+        // --- Bar tap gesture ---
+        Box(
+            Modifier.matchParentSize().pointerInput(data) {
+                detectTapGestures { offset ->
+                    val x = offset.x - startX
+                    val idx = (x / (barWidth + actualSpacing)).toInt().coerceIn(0, barCount - 1)
+                    if (selectedBar == idx) selectedBar = null else selectedBar = idx
+                }
+            }
+        )
     }
 }
