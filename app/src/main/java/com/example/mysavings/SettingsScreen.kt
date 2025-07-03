@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.mysavings
 
 import androidx.compose.foundation.layout.*
@@ -11,11 +13,18 @@ import kotlinx.coroutines.flow.collectLatest
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.app.Activity
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val languageCode by viewModel.languageCode.collectAsState()
+    var showLanguageMenu by remember { mutableStateOf(false) }
+    val languages = mapOf("ru" to "Русский", "en" to "English")
+    val context = LocalContext.current
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/csv"),
@@ -59,23 +68,60 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("Управление данными", style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(16.dp))
-
+            Text(stringResource(R.string.settings_data_management), style = MaterialTheme.typography.titleLarge)
+            
             Button(
                 onClick = { viewModel.onExportClicked() },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Экспортировать статистику")
+                Text(stringResource(R.string.settings_export_button))
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            
             OutlinedButton(
                 onClick = { viewModel.onImportClicked() },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Импортировать статистику")
+                Text(stringResource(R.string.settings_import_button))
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(stringResource(R.string.settings_language_label), style = MaterialTheme.typography.titleLarge)
+
+            ExposedDropdownMenuBox(
+                expanded = showLanguageMenu,
+                onExpandedChange = { showLanguageMenu = !showLanguageMenu }
+            ) {
+                OutlinedTextField(
+                    value = languages[languageCode] ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.settings_language_select)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showLanguageMenu) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = showLanguageMenu,
+                    onDismissRequest = { showLanguageMenu = false }
+                ) {
+                    languages.forEach { (code, name) ->
+                        DropdownMenuItem(
+                            text = { Text(name) },
+                            onClick = {
+                                if (code != languageCode) {
+                                    viewModel.onLanguageSelected(code)
+                                    (context as? Activity)?.recreate()
+                                }
+                                showLanguageMenu = false
+                            }
+                        )
+                    }
+                }
             }
         }
     }

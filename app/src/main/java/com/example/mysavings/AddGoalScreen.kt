@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -54,15 +55,15 @@ fun AddGoalScreen(navController: NavController, viewModel: GoalsViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isEditing) "Редактировать Цель" else "Новая Цель") },
+                title = { Text(if (isEditing) stringResource(R.string.goals_edit_title) else stringResource(R.string.goals_new_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.edit_entry_back_button_desc))
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.saveGoal() }) {
-                        Icon(Icons.Filled.Done, contentDescription = "Сохранить цель")
+                        Icon(Icons.Filled.Done, contentDescription = stringResource(R.string.goals_save_button))
                     }
                 }
             )
@@ -78,20 +79,20 @@ fun AddGoalScreen(navController: NavController, viewModel: GoalsViewModel) {
             OutlinedTextField(
                 value = viewModel.goalName,
                 onValueChange = viewModel::onGoalNameChange,
-                label = { Text("Название цели") },
+                label = { Text(stringResource(R.string.goals_name_hint)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
             OutlinedTextField(
                 value = viewModel.goalDescription,
                 onValueChange = viewModel::onGoalDescriptionChange,
-                label = { Text("Описание (необязательно)") },
+                label = { Text(stringResource(R.string.goals_description_hint)) },
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = viewModel.targetAmount,
                 onValueChange = viewModel::onTargetAmountChange,
-                label = { Text("Сумма для накопления") },
+                label = { Text(stringResource(R.string.goals_target_amount_hint)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
@@ -105,7 +106,7 @@ fun AddGoalScreen(navController: NavController, viewModel: GoalsViewModel) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Учитывать прошлые сбережения?",
+                        text = stringResource(R.string.goals_include_past_savings_label),
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.bodyLarge
                     )
@@ -116,12 +117,12 @@ fun AddGoalScreen(navController: NavController, viewModel: GoalsViewModel) {
                 }
 
                 if (viewModel.includePastSavings) {
-                    val formattedDate = viewModel.customStartDate?.format(DateTimeFormatter.ofPattern("dd MMMM yyyy")) ?: "Выберите дату"
+                    val formattedDate = viewModel.customStartDate?.format(DateTimeFormatter.ofPattern("dd MMMM yyyy")) ?: stringResource(R.string.goals_start_date_placeholder)
                     OutlinedButton(
                         onClick = { showDatePicker = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Начать учет с: $formattedDate")
+                        Text(stringResource(R.string.goals_start_date_button_label, formattedDate))
                     }
                 }
             }

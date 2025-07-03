@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -29,13 +30,13 @@ fun HistoryScreen(viewModel: HistoryViewModel, navController: NavController) {
     if (viewModel.showDeleteConfirmation) {
         AlertDialog(
             onDismissRequest = { viewModel.cancelDeletion() },
-            title = { Text("Подтверждение") },
-            text = { Text("Вы уверены, что хотите удалить эту запись? Это действие нельзя будет отменить.") },
+            title = { Text(stringResource(id = R.string.goals_delete_confirm_title)) },
+            text = { Text(stringResource(R.string.history_delete_confirm_text)) },
             confirmButton = {
-                TextButton(onClick = { viewModel.confirmDeletion() }) { Text("Удалить") }
+                TextButton(onClick = { viewModel.confirmDeletion() }) { Text(stringResource(id = R.string.goals_delete_confirm_yes)) }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.cancelDeletion() }) { Text("Отмена") }
+                TextButton(onClick = { viewModel.cancelDeletion() }) { Text(stringResource(id = R.string.goals_delete_confirm_no)) }
             }
         )
     }
@@ -45,7 +46,7 @@ fun HistoryScreen(viewModel: HistoryViewModel, navController: NavController) {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text("Ваша история пока пуста.")
+            Text(stringResource(R.string.history_empty_state))
         }
     } else {
         LazyColumn(
@@ -76,10 +77,10 @@ fun HistoryItemCard(
 ) {
     var showMenu by remember { mutableStateOf(false) }
     val isSaving = entry.cost >= 0
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("ru", "RU"))
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.getDefault())
     val indicatorColor = if (isSaving) Color(0xFF4CAF50) else Color(0xFFF44336)
     val indicatorIcon = if (isSaving) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward
-    val formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm")
+    val formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm", Locale.getDefault())
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -103,7 +104,7 @@ fun HistoryItemCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Категория: ${entry.category}",
+                    text = stringResource(R.string.history_category_label, entry.category),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -120,14 +121,14 @@ fun HistoryItemCard(
             ) {
                 Box {
                     IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, "Опции")
+                        Icon(Icons.Default.MoreVert, stringResource(id = R.string.goals_options_menu_desc))
                     }
                     DropdownMenu(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Редактировать") },
+                            text = { Text(stringResource(id = R.string.goals_edit_option)) },
                             onClick = {
                                 onEditClick()
                                 showMenu = false
@@ -135,7 +136,7 @@ fun HistoryItemCard(
                             leadingIcon = { Icon(Icons.Outlined.Edit, null) }
                         )
                         DropdownMenuItem(
-                            text = { Text("Удалить") },
+                            text = { Text(stringResource(id = R.string.goals_delete_option)) },
                             onClick = {
                                 onDeleteClick()
                                 showMenu = false
@@ -151,7 +152,7 @@ fun HistoryItemCard(
                 ) {
                     Icon(
                         imageVector = indicatorIcon,
-                        contentDescription = if (isSaving) "Экономия" else "Трата",
+                        contentDescription = if (isSaving) stringResource(R.string.history_saving_desc) else stringResource(R.string.history_waste_desc),
                         tint = indicatorColor,
                         modifier = Modifier.size(20.dp)
                     )

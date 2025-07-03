@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
@@ -35,6 +36,10 @@ import androidx.navigation.navArgument
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import java.util.Locale
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 
 class MainActivity : ComponentActivity() {
@@ -65,7 +70,21 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Set the locale before the activity is created
+        runBlocking {
+            val lang = settingsRepository.languageCodeFlow.first()
+            setLocale(lang)
+        }
+
         super.onCreate(savedInstanceState)
+
+        // Set up a collector to update the locale if it changes while the app is running
+        lifecycleScope.launch {
+            settingsRepository.languageCodeFlow.collect { languageCode ->
+                setLocale(languageCode)
+            }
+        }
+
         setContent {
             MySavingsTheme {
                 val hasSeenWelcome by settingsRepository.welcomeScreenSeenFlow.collectAsState(initial = null)
@@ -89,6 +108,14 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun setLocale(languageCode: String) {
+        val locale = Locale(languageCode)
+        Locale.setDefault(locale)
+        val config = resources.configuration
+        config.setLocale(locale)
+        resources.updateConfiguration(config, resources.displayMetrics)
     }
 }
 
@@ -149,7 +176,7 @@ fun AppTopBar(currentRoute: String?, onNavigationIconClick: () -> Unit) {
             IconButton(onClick = onNavigationIconClick) {
                 Icon(
                     imageVector = Icons.Default.Menu,
-                    contentDescription = "Меню навигации"
+                    contentDescription = stringResource(R.string.nav_menu_description)
                 )
             }
         }
@@ -185,7 +212,7 @@ fun AppDrawerContent(
 
             NavigationDrawerItem(
                 icon = { Icon(getIconForScreen(screen.route), contentDescription = null) },
-                label = { Text(getLabelForScreen(screen.route)) },
+                label = { Text(getTitleForScreen(screen.route)) },
                 selected = isSelected,
                 onClick = {
                     navController.navigate(routeToNavigate) {
@@ -273,37 +300,28 @@ fun AppNavigationHost(
     }
 }
 
-private fun getTitleForScreen(route: String?): String {
+@Composable
+fun getTitleForScreen(route: String?): String {
     return when (route) {
-        Screen.MainScreen.route -> "Добавить"
-        Screen.StatisticsScreen.route -> "Статистика"
-        Screen.SettingsScreen.route -> "Настройки"
-        Screen.GoalsScreen.route -> "Мои Цели"
-        Screen.AddGoalScreen.route -> "Новая Цель"
-        Screen.HistoryScreen.route -> "История"
-        else -> "My Savings"
-    }
-}
-
-private fun getLabelForScreen(route: String): String {
-    return when (route) {
-        Screen.MainScreen.route -> "Добавить"
-        Screen.StatisticsScreen.route -> "Статистика"
-        Screen.SettingsScreen.route -> "Настройки"
-        Screen.GoalsScreen.route -> "Цели"
-        Screen.HistoryScreen.route -> "История"
+        Screen.MainScreen.route, Screen.AddEntryChooserScreen.route -> stringResource(id = R.string.screen_title_main)
+        Screen.HistoryScreen.route -> stringResource(id = R.string.screen_title_history)
+        Screen.StatisticsScreen.route -> stringResource(id = R.string.screen_title_statistics)
+        Screen.GoalsScreen.route -> stringResource(id = R.string.screen_title_goals)
+        Screen.SettingsScreen.route -> stringResource(id = R.string.screen_title_settings)
+        Screen.AddGoalScreen.route -> stringResource(id = R.string.screen_title_add_goal)
+        "edit_entry/{entryId}" -> stringResource(id = R.string.screen_title_edit_entry)
         else -> ""
     }
 }
 
 @Composable
-private fun getIconForScreen(route: String): ImageVector {
+private fun getIconForScreen(route: String?): ImageVector {
     return when (route) {
-        Screen.MainScreen.route -> Icons.Outlined.AddCircle
-        Screen.StatisticsScreen.route -> Icons.Outlined.ShowChart
-        Screen.SettingsScreen.route -> Icons.Outlined.Settings
-        Screen.GoalsScreen.route -> Icons.Outlined.Flag
+        Screen.MainScreen.route, Screen.AddEntryChooserScreen.route -> Icons.Outlined.AddCircle
         Screen.HistoryScreen.route -> Icons.Outlined.History
-        else -> Icons.Outlined.AddCircle
+        Screen.StatisticsScreen.route -> Icons.Outlined.ShowChart
+        Screen.GoalsScreen.route -> Icons.Outlined.Flag
+        Screen.SettingsScreen.route -> Icons.Outlined.Settings
+        else -> Icons.Outlined.AddCircle // Default icon
     }
 }

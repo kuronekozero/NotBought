@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
 
 enum class EntryType {
     SAVING, WASTE
@@ -26,7 +27,7 @@ fun AddEntryChooserScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Что вы хотите добавить?",
+            text = stringResource(R.string.add_entry_chooser_title),
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center
         )
@@ -35,14 +36,14 @@ fun AddEntryChooserScreen(navController: NavController) {
             onClick = { navController.navigate("${Screen.MainScreen.route}/${EntryType.SAVING.name}") },
             modifier = Modifier.fillMaxWidth().height(50.dp)
         ) {
-            Text("Я сэкономил (не купил)")
+            Text(stringResource(R.string.add_entry_saved_button))
         }
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedButton(
             onClick = { navController.navigate("${Screen.MainScreen.route}/${EntryType.WASTE.name}") },
             modifier = Modifier.fillMaxWidth().height(50.dp)
         ) {
-            Text("Я потратил (купил зря)")
+            Text(stringResource(R.string.add_entry_spent_button))
         }
     }
 }

@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
@@ -68,11 +69,11 @@ fun MainScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(if (entryType == EntryType.SAVING) "Добавить экономию" else "Добавить трату")
+                    Text(if (entryType == EntryType.SAVING) stringResource(R.string.main_add_saving_title) else stringResource(R.string.main_add_waste_title))
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.edit_entry_back_button_desc))
                     }
                 }
             )
@@ -89,14 +90,14 @@ fun MainScreen(
             OutlinedTextField(
                 value = viewModel.itemName,
                 onValueChange = { viewModel.onItemNameChange(it) },
-                label = { Text("Название товара/услуги") },
+                label = { Text(stringResource(R.string.main_item_name_hint)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
                 value = viewModel.itemCost,
                 onValueChange = { viewModel.onItemCostChange(it) },
-                label = { Text("Стоимость") },
+                label = { Text(stringResource(R.string.main_item_cost_hint)) },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -114,7 +115,7 @@ fun MainScreen(
                         OutlinedTextField(
                             value = viewModel.selectedCategoryName,
                             onValueChange = {},
-                            label = { Text("Категория") },
+                            label = { Text(stringResource(R.string.main_category_hint)) },
                             readOnly = true,
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                             modifier = Modifier.menuAnchor().fillMaxWidth()
@@ -136,16 +137,16 @@ fun MainScreen(
                     }
                 }
                 IconButton(onClick = { viewModel.openCategoryDialog() }) {
-                    Icon(Icons.Filled.Edit, contentDescription = "Управление категориями")
+                    Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.main_edit_categories_desc))
                 }
             }
 
-            val formatter = remember { DateTimeFormatter.ofPattern("dd MMMM yy", Locale("ru")) }
+            val formatter = remember { DateTimeFormatter.ofPattern("dd MMMM yy", Locale.getDefault()) }
             OutlinedButton(
                 onClick = { viewModel.openDatePickerDialog() },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(Icons.Default.DateRange, contentDescription = "Выбрать дату", modifier = Modifier.size(ButtonDefaults.IconSize))
+                Icon(Icons.Default.DateRange, contentDescription = stringResource(R.string.main_select_date_desc), modifier = Modifier.size(ButtonDefaults.IconSize))
                 Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                 Text(text = viewModel.selectedDate.format(formatter))
             }
@@ -157,7 +158,7 @@ fun MainScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (entryType == EntryType.SAVING) "Сохранить экономию" else "Сохранить трату")
+                Text(if (entryType == EntryType.SAVING) stringResource(R.string.main_save_saving_button) else stringResource(R.string.main_save_waste_button))
             }
         }
     }
@@ -181,25 +182,25 @@ fun CategoryManagementDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text("Управление категориями", style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.cat_dialog_title), style = MaterialTheme.typography.titleLarge)
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
                         value = viewModel.newCategoryName,
                         onValueChange = { viewModel.onNewCategoryNameChange(it) },
-                        label = { Text("Новая категория") },
+                        label = { Text(stringResource(R.string.cat_dialog_new_category_hint)) },
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = { viewModel.addNewCategory() }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Добавить категорию")
+                        Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.cat_dialog_add_category_desc))
                     }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
-                Text("Существующие категории:", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.cat_dialog_existing_categories_title), style = MaterialTheme.typography.titleMedium)
 
                 if (categories.isEmpty()) {
-                    Text("Пользовательских категорий нет.")
+                    Text(stringResource(R.string.cat_dialog_no_custom_categories))
                 } else {
                     LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
                         items(categories) { category ->
@@ -212,7 +213,7 @@ fun CategoryManagementDialog(
                             ) {
                                 Text(category.name)
                                 IconButton(onClick = { viewModel.deleteCategory(category) }) {
-                                    Icon(Icons.Filled.Delete, contentDescription = "Удалить категорию")
+                                    Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.cat_dialog_delete_category_desc))
                                 }
                             }
                             Divider()
@@ -221,7 +222,7 @@ fun CategoryManagementDialog(
                 }
                 Spacer(modifier = Modifier.height(10.dp))
                 TextButton(onClick = onDismiss) {
-                    Text("Закрыть")
+                    Text(stringResource(R.string.cat_dialog_close_button))
                 }
             }
         }

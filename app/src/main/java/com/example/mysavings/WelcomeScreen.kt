@@ -12,6 +12,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun WelcomeScreen(onDismiss: () -> Unit) {
@@ -32,14 +33,14 @@ fun WelcomeScreen(onDismiss: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Добро пожаловать в My Savings!",
+                text = stringResource(R.string.welcome_title),
                 style = MaterialTheme.typography.headlineLarge,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
             Text(
-                text = "My Savings — это простое приложение, созданное для того, чтобы помочь тебе отслеживать свои сбережения и траты. Часто бывает сложно понять, куда уходят деньги, или увидеть реальный прогресс в накоплениях, особенно когда речь идёт об экономии от отказа от ненужных покупок.",
+                text = stringResource(R.string.welcome_para1),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 8.dp)
@@ -47,7 +48,7 @@ fun WelcomeScreen(onDismiss: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Его основная идея — показать тебе, как ты можешь копить деньги, и визуализировать эффект от сэкономленных средств. Ты сможешь отмечать свои финансовые цели и следить за тем, как сбережения помогают тебе их достигать.",
+                text = stringResource(R.string.welcome_para2),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 8.dp)
@@ -55,7 +56,7 @@ fun WelcomeScreen(onDismiss: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "Это твой личный инструмент для более осознанного отношения к финансам.",
+                text = stringResource(R.string.welcome_para3),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 8.dp)
@@ -69,7 +70,7 @@ fun WelcomeScreen(onDismiss: () -> Unit) {
                     .fillMaxWidth()
                     .height(56.dp)
             ) {
-                Text("Давай начнем!")
+                Text(stringResource(R.string.welcome_button_start))
             }
         }
     }

@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -84,6 +85,7 @@ import androidx.compose.ui.zIndex
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.material.icons.filled.EmojiEvents
+import android.util.Log
 
 // In StatisticsScreen.kt
 
@@ -98,6 +100,7 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
     val wastesData by viewModel.wastesData.collectAsState()
     val heatmapData by viewModel.heatmapData.collectAsState()
     val currentMonth by viewModel.currentMonth.collectAsState()
+    val firstEntryDate by viewModel.firstEntryDate.collectAsState()
 
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
@@ -105,7 +108,7 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
         selectedDate = null
     }
 
-    val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale("ru", "RU")) }
+    val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale.getDefault()) }
 
     LazyColumn(
         modifier = Modifier
@@ -127,6 +130,7 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
             AverageDailyStatsCard(
                 averageDailySavings = averageDailySavings,
                 averageDailyWaste = averageDailyWaste,
+                firstEntryDate = firstEntryDate,
                 currencyFormatter = currencyFormat
             )
         }
@@ -134,7 +138,7 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
         // 2. Projections Cards
         item {
             ProjectionCard(
-                title = "Прогноз экономии",
+                title = stringResource(R.string.stats_projections_savings_title),
                 projections = savingsProjections,
                 currencyFormatter = currencyFormat,
                 accentColor = Color(0xFF4CAF50)
@@ -142,7 +146,7 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
         }
         item {
             ProjectionCard(
-                title = "Прогноз лишних трат",
+                title = stringResource(R.string.stats_projections_waste_title),
                 projections = wastesProjections,
                 currencyFormatter = currencyFormat,
                 accentColor = Color(0xFFF44336)
@@ -191,7 +195,7 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
         if (savingsData.isNotEmpty()) {
             item {
                 CategoryPieChartWithLegend(
-                    title = "Сэкономлено по категориям",
+                    title = stringResource(id = R.string.stats_pie_chart_savings_title),
                     data = savingsData,
                     currencyFormatter = currencyFormat
                 )
@@ -202,7 +206,7 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
         if (wastesData.isNotEmpty()) {
             item {
                 CategoryPieChartWithLegend(
-                    title = "Лишние траты по категориям",
+                    title = stringResource(id = R.string.stats_pie_chart_waste_title),
                     data = wastesData,
                     currencyFormatter = currencyFormat
                 )
@@ -224,7 +228,7 @@ fun HeatmapCalendar(
     val daysInMonth = currentMonth.lengthOfMonth()
     val firstDayOfMonth = currentMonth.atDay(1)
     val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value
-    val russianLocale = Locale("ru")
+    val currentLocale = Locale.getDefault()
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -233,7 +237,7 @@ fun HeatmapCalendar(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             CalendarHeader(
-                month = currentMonth.month.getDisplayName(TextStyle.FULL_STANDALONE, russianLocale).replaceFirstChar { it.uppercase() },
+                month = currentMonth.month.getDisplayName(TextStyle.FULL_STANDALONE, currentLocale).replaceFirstChar { it.uppercase() },
                 year = currentMonth.year.toString(),
                 onPrevious = onPreviousMonth,
                 onNext = onNextMonth
@@ -244,7 +248,7 @@ fun HeatmapCalendar(
                 val weekdays = DayOfWeek.values()
                 for (i in 0..6) {
                     Text(
-                        text = weekdays[i].getDisplayName(TextStyle.SHORT, russianLocale),
+                        text = weekdays[i].getDisplayName(TextStyle.SHORT, currentLocale),
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.bodySmall,
@@ -294,8 +298,8 @@ fun DailyDetailCard(
     netAmount: Double?,
     currencyFormatter: NumberFormat
 ) {
-    val russianLocale = Locale("ru")
-    val formatter = remember { DateTimeFormatter.ofPattern("d MMMM yyyy", russianLocale) }
+    val currentLocale = Locale.getDefault()
+    val formatter = remember { DateTimeFormatter.ofPattern("d MMMM yyyy", currentLocale) }
 
     AnimatedVisibility(
         visible = visible,
@@ -350,14 +354,14 @@ private fun CalendarHeader(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         IconButton(onClick = onPrevious) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous Month")
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.stats_calendar_prev_month))
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(text = month, style = MaterialTheme.typography.titleLarge)
             Text(text = year, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         IconButton(onClick = onNext) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next Month")
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.stats_calendar_next_month))
         }
     }
 }
@@ -445,11 +449,11 @@ fun ProjectionCard(
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 ProjectionValue(
-                    label = "Неделя",
+                    label = stringResource(R.string.stats_projections_week),
                     value = currencyFormatter.format(projections.perWeek)
                 )
                 ProjectionValue(
-                    label = "Месяц",
+                    label = stringResource(R.string.stats_projections_month),
                     value = currencyFormatter.format(projections.perMonth)
                 )
             }
@@ -459,11 +463,11 @@ fun ProjectionCard(
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 ProjectionValue(
-                    label = "Полгода",
+                    label = stringResource(R.string.stats_projections_half_year),
                     value = currencyFormatter.format(projections.perHalfYear)
                 )
                 ProjectionValue(
-                    label = "Год",
+                    label = stringResource(R.string.stats_projections_year),
                     value = currencyFormatter.format(projections.perYear)
                 )
             }
@@ -527,7 +531,7 @@ fun ProminentTotalNetSavingsCard(totalSaved: Double, currencyFormatter: NumberFo
                 horizontalAlignment = Alignment.Start
             ) {
                 Text(
-                    text = "Всего сэкономлено (чистыми)",
+                    text = stringResource(R.string.stats_total_net_savings),
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     color = Color(0xFF388E3C)
                 )
@@ -546,6 +550,7 @@ fun ProminentTotalNetSavingsCard(totalSaved: Double, currencyFormatter: NumberFo
 fun AverageDailyStatsCard(
     averageDailySavings: Double,
     averageDailyWaste: Double,
+    firstEntryDate: LocalDate?,
     currencyFormatter: NumberFormat
 ) {
     Card(
@@ -566,7 +571,7 @@ fun AverageDailyStatsCard(
                 horizontalAlignment = Alignment.Start
             ) {
                 Text(
-                    text = "В среднем экономите в день",
+                    text = stringResource(R.string.stats_avg_daily_savings),
                     style = MaterialTheme.typography.bodyLarge,
                     color = Color(0xFF388E3C)
                 )
@@ -577,7 +582,7 @@ fun AverageDailyStatsCard(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "В среднем тратите лишнего в день",
+                    text = stringResource(R.string.stats_avg_daily_waste),
                     style = MaterialTheme.typography.bodyLarge,
                     color = Color(0xFFD32F2F)
                 )
@@ -592,8 +597,11 @@ fun AverageDailyStatsCard(
                 modifier = Modifier.widthIn(max = 160.dp),
                 horizontalAlignment = Alignment.End
             ) {
+                val formattedDate = remember(firstEntryDate) {
+                    firstEntryDate?.format(DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.SHORT)) ?: "..."
+                }
                 Text(
-                    text = "Средние значения за всё время использования приложения.",
+                    text = stringResource(R.string.stats_avg_total_time_note, formattedDate),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.End
@@ -617,7 +625,7 @@ fun NetSavingsLineChartCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Net Savings Over Time",
+                text = stringResource(R.string.stats_line_chart_title),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -653,7 +661,7 @@ fun NetSavingsLineChartCard(
                         .height(250.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No data available for the selected period.")
+                    Text(stringResource(R.string.stats_no_data_period))
                 }
             }
         }
@@ -904,6 +912,14 @@ fun CategoryPieChartWithLegend(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(text = selectedCategoryInfo.categoryName, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                     Text(text = currencyFormatter.format(selectedCategoryInfo.totalAmount), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                } else {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = stringResource(R.string.stats_pie_chart_savings_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -940,59 +956,63 @@ fun DualBarChartCard(viewModel: StatisticsViewModel) {
     val period by viewModel.dualBarChartPeriod.collectAsState()
     val data by viewModel.dualBarChartData.collectAsState()
     val refDate by viewModel.currentDualBarChartDate.collectAsState()
-    val currencyFormat = remember { java.text.NumberFormat.getCurrencyInstance(java.util.Locale("ru", "RU")) }
+    val currencyFormat = remember { java.text.NumberFormat.getCurrencyInstance(Locale.getDefault()) }
+
     val allZero = data.all { it.savings == 0.0 && it.spending == 0.0 }
 
-    // --- Compact header layout ---
+    val tabs = listOf(
+        stringResource(id = R.string.stats_dual_bar_chart_week),
+        stringResource(id = R.string.stats_dual_bar_chart_month),
+        stringResource(id = R.string.stats_dual_bar_chart_year)
+    )
+    val selectedTabIndex = when (period) {
+        DualBarChartPeriod.WEEK -> 0
+        DualBarChartPeriod.MONTH -> 1
+        DualBarChartPeriod.YEAR -> 2
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Header with period tabs and navigation
             Row(
-                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.fillMaxWidth()
             ) {
                 IconButton(
-                    onClick = { viewModel.previousDualBarChartPeriod() },
+                    onClick = { viewModel.navigateDualBarChart(forward = false) },
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous period")
                 }
                 Box(modifier = Modifier.weight(1f)) {
                     TabRow(
-                        selectedTabIndex = period.ordinal,
+                        selectedTabIndex = selectedTabIndex,
                         containerColor = Color.Transparent,
                         contentColor = MaterialTheme.colorScheme.primary,
                         divider = {},
                         modifier = Modifier.height(36.dp)
                     ) {
-                        DualBarChartPeriod.values().forEach { p ->
+                        tabs.forEachIndexed { index, title ->
                             Tab(
-                                selected = period == p,
-                                onClick = { viewModel.setDualBarChartPeriod(p) },
-                                text = { Text(
-                                    when (p) {
-                                        DualBarChartPeriod.WEEK -> "Неделя"
-                                        DualBarChartPeriod.MONTH -> "Месяц"
-                                        DualBarChartPeriod.YEAR -> "Год"
-                                    },
-                                    fontSize = 14.sp,
-                                    maxLines = 1
-                                ) }
+                                selected = selectedTabIndex == index,
+                                onClick = { viewModel.setDualBarChartPeriod(DualBarChartPeriod.values()[index]) },
+                                text = { Text(title, fontSize = 14.sp, maxLines = 1) }
                             )
                         }
                     }
                 }
                 IconButton(
-                    onClick = { viewModel.nextDualBarChartPeriod() },
+                    onClick = { viewModel.navigateDualBarChart(forward = true) },
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next period")
                 }
             }
+
             Spacer(modifier = Modifier.height(12.dp))
             if (!allZero) {
                 DualBarChart(
@@ -1010,7 +1030,7 @@ fun DualBarChartCard(viewModel: StatisticsViewModel) {
                         .height(250.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Нет данных для этого периода.")
+                    Text(stringResource(R.string.stats_no_data_period))
                 }
             }
         }
@@ -1019,8 +1039,8 @@ fun DualBarChartCard(viewModel: StatisticsViewModel) {
 
 @Composable
 private fun DualBarChart(
-    data: List<SavingsSpendingDataPoint>,
-    currencyFormatter: java.text.NumberFormat,
+    data: List<DualBarChartDataPoint>,
+    currencyFormatter: NumberFormat,
     period: DualBarChartPeriod,
     modifier: Modifier = Modifier
 ) {
@@ -1115,8 +1135,15 @@ private fun DualBarChart(
                 // X axis label
                 drawContext.canvas.nativeCanvas.save()
                 drawContext.canvas.nativeCanvas.rotate(-45f, x + barWidth / 2, chartHeight + 18f)
+
+                val label = when (period) {
+                    DualBarChartPeriod.WEEK -> point.date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                    DualBarChartPeriod.MONTH -> point.date.dayOfMonth.toString()
+                    DualBarChartPeriod.YEAR -> point.date.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                }
+
                 drawContext.canvas.nativeCanvas.drawText(
-                    point.label,
+                    label,
                     x + barWidth / 2,
                     chartHeight + 28f,
                     textPaint
@@ -1152,10 +1179,23 @@ private fun DualBarChart(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(point.label, style = MaterialTheme.typography.labelLarge)
+                        val tooltipLabel = when (period) {
+                            DualBarChartPeriod.WEEK -> point.date.format(DateTimeFormatter.ofPattern("EEEE", Locale.getDefault()))
+                            DualBarChartPeriod.MONTH -> {
+                                val weekStart = point.date
+                                val weekEnd = weekStart.plusDays(6)
+                                if (weekStart.month != weekEnd.month) {
+                                    "Week: ${weekStart.format(DateTimeFormatter.ofPattern("MMM d"))} - ${weekEnd.format(DateTimeFormatter.ofPattern("MMM d"))}"
+                                } else {
+                                    "Week: ${weekStart.dayOfMonth} - ${weekEnd.dayOfMonth}"
+                                }
+                            }
+                            DualBarChartPeriod.YEAR -> point.date.format(DateTimeFormatter.ofPattern("MMMM", Locale.getDefault()))
+                        }
+                        Text(tooltipLabel, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                         if (point.savings > 0) Text("+${currencyFormatter.format(point.savings)}", color = savingsColor, style = MaterialTheme.typography.bodyLarge)
                         if (point.spending > 0) Text("-${currencyFormatter.format(point.spending)}", color = spendingColor, style = MaterialTheme.typography.bodyLarge)
-                        if (point.savings == 0.0 && point.spending == 0.0) Text("Нет данных", style = MaterialTheme.typography.bodyMedium)
+                        if (point.savings == 0.0 && point.spending == 0.0) Text(stringResource(R.string.stats_no_data_generic), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
@@ -1172,3 +1212,9 @@ private fun DualBarChart(
         )
     }
 }
+
+//fun safeString(id: Int, vararg args: Any) = try {
+//    context.getString(id, *args)
+//} catch (e: Exception) {
+//    Log.e("i18n", "String fail", e); "‼️STRING_ERROR‼️"
+//}

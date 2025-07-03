@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MySavings</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_data_management">Data Management</string>
+    <string name="settings_export_button">Export Statistics</string>
+    <string name="settings_import_button">Import Statistics</string>
+    <string name="settings_language_label">Language</string>
+    <string name="settings_language_select">Select language</string>
+    <string name="settings_language_changed_message">Language changed. Please restart the app.</string>
+    <string name="settings_export_success">Export successful</string>
+    <string name="settings_export_error">Error during export</string>
+    <string name="settings_import_success">Import successful</string>
+    <string name="settings_import_error">Error during import</string>
+
+    <!-- Welcome Screen -->
+    <string name="welcome_title">Welcome to My Savings!</string>
+    <string name="welcome_para1">My Savings is a simple app designed to help you track your savings and spending. It\'s often hard to understand where your money goes or to see real progress in your savings, especially when it comes to money saved by giving up unnecessary purchases.</string>
+    <string name="welcome_para2">Its main idea is to show you how you can save money and to visualize the effect of your savings. You will be able to mark your financial goals and track how your savings help you achieve them.</string>
+    <string name="welcome_para3">This is your personal tool for a more conscious approach to finances.</string>
+    <string name="welcome_button_start">Let\'s get started!</string>
+
+    <!-- Navigation -->
+    <string name="nav_menu_description">Navigation Menu</string>
+    <string name="screen_title_main">Main</string>
+    <string name="screen_title_history">History</string>
+    <string name="screen_title_statistics">Statistics</string>
+    <string name="screen_title_goals">Goals</string>
+    <string name="screen_title_settings">Settings</string>
+    <string name="screen_title_add_entry">Add Entry</string>
+    <string name="screen_title_edit_entry">Edit Entry</string>
+    <string name="screen_title_add_goal">Add Goal</string>
+
+    <!-- Add/Edit Entry -->
+    <string name="add_entry_saved_button">Saved</string>
+    <string name="add_entry_spent_button">Spent</string>
+    <string name="add_entry_title_hint">Title</string>
+    <string name="add_entry_category_hint">Category</string>
+    <string name="add_entry_amount_hint">Amount</string>
+    <string name="add_entry_save_button">Save</string>
+    <string name="add_entry_delete_button">Delete</string>
+    <string name="add_entry_delete_confirm_title">Confirm Deletion</string>
+    <string name="add_entry_delete_confirm_text">Are you sure you want to delete this entry?</string>
+    <string name="add_entry_delete_confirm_yes">Yes</string>
+    <string name="add_entry_delete_confirm_no">No</string>
+    <string name="add_entry_chooser_title">What do you want to add?</string>
+
+    <!-- Goals -->
+    <string name="goals_add_new_button">Add New Goal</string>
+    <string name="goals_empty_state">You don\'t have any goals yet. Tap the button to add your first one!</string>
+    <string name="goals_name_hint">Goal name</string>
+    <string name="goals_target_amount_hint">Target amount</string>
+    <string name="goals_save_button">Save Goal</string>
+    <string name="goals_delete_button">Delete Goal</string>
+    <string name="goals_progress_label">Progress:</string>
+    <string name="goals_collected_from_total">Collected %1$s of %2$s</string>
+
+    <string name="edit_entry_title">Edit Entry</string>
+    <string name="edit_entry_back_button_desc">Back</string>
+    <string name="edit_entry_save_button_desc">Save changes</string>
+    <string name="edit_entry_cost_hint">Cost</string>
+    <string name="edit_entry_is_saving_label">This is a saving</string>
+    <string name="edit_entry_is_waste_label">This is a waste</string>
+
+    <string name="goals_delete_confirm_title">Confirm</string>
+    <string name="goals_delete_confirm_text">Are you sure you want to delete this goal?</string>
+    <string name="goals_delete_confirm_yes">Delete</string>
+    <string name="goals_delete_confirm_no">Cancel</string>
+    <string name="goals_active_header">Active Goals</string>
+    <string name="goals_completed_header">Completed Goals</string>
+    <string name="goals_options_menu_desc">Options</string>
+    <string name="goals_edit_option">Edit</string>
+    <string name="goals_delete_option">Delete</string>
+
+    <string name="goals_edit_title">Edit Goal</string>
+    <string name="goals_new_title">New Goal</string>
+    <string name="goals_description_hint">Description (optional)</string>
+    <string name="goals_include_past_savings_label">Include past savings?</string>
+    <string name="goals_start_date_button_label">Start tracking from: %1$s</string>
+    <string name="goals_start_date_placeholder">Select a date</string>
+
+    <string name="history_delete_confirm_text">Are you sure you want to delete this entry? This action cannot be undone.</string>
+    <string name="history_empty_state">Your history is empty.</string>
+    <string name="history_category_label">Category: %1$s</string>
+    <string name="history_saving_desc">Saving</string>
+    <string name="history_waste_desc">Waste</string>
+
+    <!-- Statistics Screen -->
+    <string name="stats_total_net_savings">Total Net Savings</string>
+    <string name="stats_projections_savings_title">Savings Projection</string>
+    <string name="stats_projections_waste_title">Waste Projection</string>
+    <string name="stats_projections_week">Week</string>
+    <string name="stats_projections_month">Month</string>
+    <string name="stats_projections_half_year">Half Year</string>
+    <string name="stats_projections_year">Year</string>
+    <string name="stats_heatmap_daily_detail_title">Daily Detail</string>
+    <string name="stats_line_chart_title">Net Savings Over Time</string>
+    <string name="stats_bar_chart_title">Savings vs Spending</string>
+    <string name="stats_pie_chart_savings_title">Savings by Category</string>
+    <string name="stats_pie_chart_waste_title">Wastes by Category</string>
+    <string name="stats_no_data_period">No data for this period.</string>
+    <string name="stats_no_data_savings_spending">No savings or spending data for this period.</string>
+    <string name="stats_no_data_generic">No data</string>
+    <string name="stats_avg_daily_savings">Average daily savings</string>
+    <string name="stats_avg_daily_waste">Average daily waste</string>
+    <string name="stats_avg_total_time_note">Average values over the entire time of using the application (since %1$s).</string>
+    <string name="stats_dual_bar_chart_week">Week</string>
+    <string name="stats_dual_bar_chart_month">Month</string>
+    <string name="stats_dual_bar_chart_year">Year</string>
+    <string name="stats_calendar_prev_month">Previous Month</string>
+    <string name="stats_calendar_next_month">Next Month</string>
+
+    <!-- Main Screen (Add Entry) -->
+    <string name="main_add_saving_title">Add Saving</string>
+    <string name="main_add_waste_title">Add Waste</string>
+    <string name="main_item_name_hint">Item/Service Name</string>
+    <string name="main_item_cost_hint">Cost</string>
+    <string name="main_category_hint">Category</string>
+    <string name="main_edit_categories_desc">Manage categories</string>
+    <string name="main_select_date_desc">Select date</string>
+    <string name="main_save_saving_button">Save Saving</string>
+    <string name="main_save_waste_button">Save Waste</string>
+
+    <!-- Category Management Dialog -->
+    <string name="cat_dialog_title">Manage Categories</string>
+    <string name="cat_dialog_new_category_hint">New category</string>
+    <string name="cat_dialog_add_category_desc">Add category</string>
+    <string name="cat_dialog_existing_categories_title">Existing categories:</string>
+    <string name="cat_dialog_no_custom_categories">No custom categories.</string>
+    <string name="cat_dialog_delete_category_desc">Delete category</string>
+    <string name="cat_dialog_close_button">Close</string>
+
+</resources>

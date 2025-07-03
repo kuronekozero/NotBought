@@ -25,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel) {
@@ -41,13 +42,13 @@ fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel) {
     if (viewModel.showDeleteConfirmation) {
         AlertDialog(
             onDismissRequest = { viewModel.cancelDeletion() },
-            title = { Text("Подтверждение") },
-            text = { Text("Вы уверены, что хотите удалить эту цель?") },
+            title = { Text(stringResource(R.string.goals_delete_confirm_title)) },
+            text = { Text(stringResource(R.string.goals_delete_confirm_text)) },
             confirmButton = {
-                TextButton(onClick = { viewModel.confirmDeletion() }) { Text("Удалить") }
+                TextButton(onClick = { viewModel.confirmDeletion() }) { Text(stringResource(R.string.goals_delete_confirm_yes)) }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.cancelDeletion() }) { Text("Отмена") }
+                TextButton(onClick = { viewModel.cancelDeletion() }) { Text(stringResource(R.string.goals_delete_confirm_no)) }
             }
         )
     }
@@ -57,7 +58,7 @@ fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel) {
             FloatingActionButton(
                 onClick = { viewModel.onAddGoalClicked() }
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Добавить новую цель")
+                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.goals_add_new_button))
             }
         }
     ) { paddingValues ->
@@ -69,7 +70,7 @@ fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel) {
                     .padding(16.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text("У вас пока нет целей. Нажмите +, чтобы добавить первую!")
+                Text(stringResource(R.string.goals_empty_state))
             }
         } else {
             LazyColumn(
@@ -82,7 +83,7 @@ fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel) {
                 if (activeGoals.isNotEmpty()) {
                     item {
                         Text(
-                            "Активные цели",
+                            stringResource(R.string.goals_active_header),
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
@@ -100,7 +101,7 @@ fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel) {
                     item {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            "Завершенные цели",
+                            stringResource(R.string.goals_completed_header),
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
@@ -150,14 +151,14 @@ fun GoalCard(
                 )
                 Box {
                     IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, "Опции")
+                        Icon(Icons.Default.MoreVert, stringResource(R.string.goals_options_menu_desc))
                     }
                     DropdownMenu(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Редактировать") },
+                            text = { Text(stringResource(R.string.goals_edit_option)) },
                             onClick = {
                                 onEditClicked()
                                 showMenu = false
@@ -165,7 +166,7 @@ fun GoalCard(
                             leadingIcon = { Icon(Icons.Outlined.Edit, null) }
                         )
                         DropdownMenuItem(
-                            text = { Text("Удалить") },
+                            text = { Text(stringResource(R.string.goals_delete_option)) },
                             onClick = {
                                 onDeleteClicked()
                                 showMenu = false

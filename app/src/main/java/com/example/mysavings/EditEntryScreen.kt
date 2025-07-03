@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,15 +39,15 @@ fun EditEntryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Редактировать запись") },
+                title = { Text(stringResource(R.string.edit_entry_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.edit_entry_back_button_desc))
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.updateEntry() }) {
-                        Icon(Icons.Filled.Done, contentDescription = "Сохранить изменения")
+                        Icon(Icons.Filled.Done, contentDescription = stringResource(R.string.edit_entry_save_button_desc))
                     }
                 }
             )
@@ -62,13 +63,13 @@ fun EditEntryScreen(
             OutlinedTextField(
                 value = viewModel.entryName,
                 onValueChange = viewModel::onEditorNameChange,
-                label = { Text("Название") },
+                label = { Text(stringResource(R.string.add_entry_title_hint)) },
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = viewModel.entryCost,
                 onValueChange = viewModel::onEditorCostChange,
-                label = { Text("Стоимость") },
+                label = { Text(stringResource(R.string.edit_entry_cost_hint)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -81,7 +82,7 @@ fun EditEntryScreen(
                     value = viewModel.entryCategory,
                     onValueChange = { },
                     readOnly = true,
-                    label = { Text("Категория") },
+                    label = { Text(stringResource(R.string.add_entry_category_hint)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                     modifier = Modifier.menuAnchor().fillMaxWidth()
                 )
@@ -106,7 +107,7 @@ fun EditEntryScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = if (viewModel.isSavingEntry) "Это экономия" else "Это трата",
+                    text = if (viewModel.isSavingEntry) stringResource(R.string.edit_entry_is_saving_label) else stringResource(R.string.edit_entry_is_waste_label),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge
                 )

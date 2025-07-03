@@ -36,6 +36,16 @@ class SettingsViewModel(
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
+    val languageCode: StateFlow<String> = settingsRepository.languageCodeFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "ru")
+
+    fun onLanguageSelected(code: String) {
+        viewModelScope.launch {
+            settingsRepository.setLanguageCode(code)
+            _uiState.update { it.copy(snackbarMessage = context.getString(R.string.settings_language_changed_message)) }
+        }
+    }
+
     fun onExportClicked() {
         viewModelScope.launch {
             _uiAction.send(UiAction.LaunchExport)
@@ -55,9 +65,9 @@ class SettingsViewModel(
                 context.contentResolver.openOutputStream(uri)?.use { outputStream ->
                     CsvHandler.writeCsv(outputStream, entries)
                 }
-                _uiState.update { it.copy(snackbarMessage = "Экспорт завершен успешно") }
+                _uiState.update { it.copy(snackbarMessage = context.getString(R.string.settings_export_success)) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(snackbarMessage = "Ошибка при экспорте") }
+                _uiState.update { it.copy(snackbarMessage = context.getString(R.string.settings_export_error)) }
             }
         }
     }
@@ -69,9 +79,9 @@ class SettingsViewModel(
                     val entries = CsvHandler.readCsv(inputStream)
                     savingEntryDao.insertAll(entries)
                 }
-                _uiState.update { it.copy(snackbarMessage = "Импорт завершен успешно") }
+                _uiState.update { it.copy(snackbarMessage = context.getString(R.string.settings_import_success)) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(snackbarMessage = "Ошибка при импорте") }
+                _uiState.update { it.copy(snackbarMessage = context.getString(R.string.settings_import_error)) }
             }
         }
     }

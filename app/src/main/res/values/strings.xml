@@ -1,3 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">my savings</string>
+    <string name="app_name">MySavings</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_data_management">Управление данными</string>
+    <string name="settings_export_button">Экспортировать статистику</string>
+    <string name="settings_import_button">Импортировать статистику</string>
+    <string name="settings_language_label">Язык</string>
+    <string name="settings_language_select">Выберите язык</string>
+    <string name="settings_language_changed_message">Язык изменен. Перезапустите приложение.</string>
+    <string name="settings_export_success">Экспорт завершен успешно</string>
+    <string name="settings_export_error">Ошибка при экспорте</string>
+    <string name="settings_import_success">Импорт завершен успешно</string>
+    <string name="settings_import_error">Ошибка при импорте</string>
+
+    <!-- Welcome Screen -->
+    <string name="welcome_title">Добро пожаловать в My Savings!</string>
+    <string name="welcome_para1">My Savings — это простое приложение, созданное для того, чтобы помочь тебе отслеживать свои сбережения и траты. Часто бывает сложно понять, куда уходят деньги, или увидеть реальный прогресс в накоплениях, особенно когда речь идёт об экономии от отказа от ненужных покупок.</string>
+    <string name="welcome_para2">Его основная идея — показать тебе, как ты можешь копить деньги, и визуализировать эффект от сэкономленных средств. Ты сможешь отмечать свои финансовые цели и следить за тем, как сбережения помогают тебе их достигать.</string>
+    <string name="welcome_para3">Это твой личный инструмент для более осознанного отношения к финансам.</string>
+    <string name="welcome_button_start">Давай начнем!</string>
+
+    <!-- Navigation -->
+    <string name="nav_menu_description">Меню навигации</string>
+    <string name="screen_title_main">Главная</string>
+    <string name="screen_title_history">История</string>
+    <string name="screen_title_statistics">Статистика</string>
+    <string name="screen_title_goals">Цели</string>
+    <string name="screen_title_settings">Настройки</string>
+    <string name="screen_title_add_entry">Добавить запись</string>
+    <string name="screen_title_edit_entry">Изменить запись</string>
+    <string name="screen_title_add_goal">Добавить цель</string>
+
+    <!-- Add/Edit Entry -->
+    <string name="add_entry_saved_button">Сэкономлено</string>
+    <string name="add_entry_spent_button">Потрачено</string>
+    <string name="add_entry_title_hint">Название</string>
+    <string name="add_entry_category_hint">Категория</string>
+    <string name="add_entry_amount_hint">Сумма</string>
+    <string name="add_entry_save_button">Сохранить</string>
+    <string name="add_entry_delete_button">Удалить</string>
+    <string name="add_entry_delete_confirm_title">Подтвердите удаление</string>
+    <string name="add_entry_delete_confirm_text">Вы уверены, что хотите удалить эту запись?</string>
+    <string name="add_entry_delete_confirm_yes">Да</string>
+    <string name="add_entry_delete_confirm_no">Нет</string>
+    <string name="add_entry_chooser_title">Что вы хотите добавить?</string>
+
+    <!-- Goals -->
+    <string name="goals_add_new_button">Добавить новую цель</string>
+    <string name="goals_empty_state">У вас пока нет целей. Нажмите кнопку, чтобы добавить первую!</string>
+    <string name="goals_name_hint">Название цели</string>
+    <string name="goals_target_amount_hint">Целевая сумма</string>
+    <string name="goals_save_button">Сохранить цель</string>
+    <string name="goals_delete_button">Удалить цель</string>
+    <string name="goals_progress_label">Прогресс:</string>
+    <string name="goals_collected_from_total">Собрано %1$s из %2$s</string>
+    <string name="goals_delete_confirm_title">Подтверждение</string>
+    <string name="goals_delete_confirm_text">Вы уверены, что хотите удалить эту цель?</string>
+    <string name="goals_delete_confirm_yes">Удалить</string>
+    <string name="goals_delete_confirm_no">Отмена</string>
+    <string name="goals_active_header">Активные цели</string>
+    <string name="goals_completed_header">Завершенные цели</string>
+    <string name="goals_options_menu_desc">Опции</string>
+    <string name="goals_edit_option">Редактировать</string>
+    <string name="goals_delete_option">Удалить</string>
+    <string name="goals_edit_title">Редактировать Цель</string>
+    <string name="goals_new_title">Новая Цель</string>
+    <string name="goals_description_hint">Описание (необязательно)</string>
+    <string name="goals_include_past_savings_label">Учитывать прошлые сбережения?</string>
+    <string name="goals_start_date_button_label">Начать учет с: %1$s</string>
+    <string name="goals_start_date_placeholder">Выберите дату</string>
+
+    <!-- Edit Entry -->
+    <string name="edit_entry_title">Редактировать запись</string>
+    <string name="edit_entry_back_button_desc">Назад</string>
+    <string name="edit_entry_save_button_desc">Сохранить изменения</string>
+    <string name="edit_entry_cost_hint">Стоимость</string>
+    <string name="edit_entry_is_saving_label">Это экономия</string>
+    <string name="edit_entry_is_waste_label">Это трата</string>
+
+    <!-- History Screen -->
+    <string name="history_delete_confirm_text">Вы уверены, что хотите удалить эту запись? Это действие нельзя будет отменить.</string>
+    <string name="history_empty_state">Ваша история пока пуста.</string>
+    <string name="history_category_label">Категория: %1$s</string>
+    <string name="history_saving_desc">Экономия</string>
+    <string name="history_waste_desc">Трата</string>
+
+    <!-- Statistics Screen -->
+    <string name="stats_total_net_savings">Всего сэкономлено (чистыми)</string>
+    <string name="stats_projections_savings_title">Прогноз экономии</string>
+    <string name="stats_projections_waste_title">Прогноз лишних трат</string>
+    <string name="stats_projections_week">Неделя</string>
+    <string name="stats_projections_month">Месяц</string>
+    <string name="stats_projections_half_year">Полгода</string>
+    <string name="stats_projections_year">Год</string>
+    <string name="stats_heatmap_daily_detail_title">Информация за день</string>
+    <string name="stats_line_chart_title">Чистая экономия во времени</string>
+    <string name="stats_bar_chart_title">Экономия vs Траты</string>
+    <string name="stats_pie_chart_savings_title">Сэкономлено по категориям</string>
+    <string name="stats_pie_chart_waste_title">Лишние траты по категориям</string>
+    <string name="stats_no_data_period">Нет данных для этого периода.</string>
+    <string name="stats_no_data_savings_spending">Нет данных о сбережениях или тратах за этот период.</string>
+    <string name="stats_no_data_generic">Нет данных</string>
+    <string name="stats_avg_daily_savings">В среднем экономите в день</string>
+    <string name="stats_avg_daily_waste">В среднем тратите лишнего в день</string>
+    <string name="stats_avg_total_time_note">Средние значения за всё время использования приложения (с %1$s).</string>
+    <string name="stats_dual_bar_chart_week">Неделя</string>
+    <string name="stats_dual_bar_chart_month">Месяц</string>
+    <string name="stats_dual_bar_chart_year">Год</string>
+    <string name="stats_calendar_prev_month">Предыдущий месяц</string>
+    <string name="stats_calendar_next_month">Следующий месяц</string>
+
+    <!-- Main Screen (Add Entry) -->
+    <string name="main_add_saving_title">Добавить экономию</string>
+    <string name="main_add_waste_title">Добавить трату</string>
+    <string name="main_item_name_hint">Название товара/услуги</string>
+    <string name="main_item_cost_hint">Стоимость</string>
+    <string name="main_category_hint">Категория</string>
+    <string name="main_edit_categories_desc">Управление категориями</string>
+    <string name="main_select_date_desc">Выбрать дату</string>
+    <string name="main_save_saving_button">Сохранить экономию</string>
+    <string name="main_save_waste_button">Сохранить трату</string>
+
+    <!-- Category Management Dialog -->
+    <string name="cat_dialog_title">Управление категориями</string>
+    <string name="cat_dialog_new_category_hint">Новая категория</string>
+    <string name="cat_dialog_add_category_desc">Добавить категорию</string>
+    <string name="cat_dialog_existing_categories_title">Существующие категории:</string>
+    <string name="cat_dialog_no_custom_categories">Пользовательских категорий нет.</string>
+    <string name="cat_dialog_delete_category_desc">Удалить категорию</string>
+    <string name="cat_dialog_close_button">Закрыть</string>
 </resources>
