@@ -100,7 +100,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     false -> {
-                        WelcomeScreen(onDismiss = { settingsViewModel.onWelcomeDismissed() })
+                        WelcomeScreen(viewModel = settingsViewModel, onDismiss = { settingsViewModel.onWelcomeDismissed() })
                     }
                     null -> {
                         Surface(modifier = Modifier.fillMaxSize()) { }
@@ -261,7 +261,7 @@ fun AppNavigationHost(
             )
         }
         composable(Screen.StatisticsScreen.route) {
-            StatisticsScreen(viewModel = statisticsViewModel)
+            StatisticsScreen(statisticsViewModel = statisticsViewModel, settingsViewModel = settingsViewModel)
         }
         composable(Screen.SettingsScreen.route) {
             SettingsScreen(viewModel = settingsViewModel)
@@ -269,7 +269,8 @@ fun AppNavigationHost(
         composable(Screen.GoalsScreen.route) {
             GoalsListScreen(
                 navController = navController,
-                viewModel = goalsViewModel
+                viewModel = goalsViewModel,
+                settingsViewModel = settingsViewModel
             )
         }
         composable(Screen.AddGoalScreen.route) {
@@ -281,7 +282,8 @@ fun AppNavigationHost(
         composable(Screen.HistoryScreen.route) {
             HistoryScreen(
                 viewModel = historyViewModel,
-                navController = navController
+                navController = navController,
+                settingsViewModel = settingsViewModel
             )
         }
         composable(

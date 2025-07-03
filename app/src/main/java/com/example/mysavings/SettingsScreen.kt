@@ -22,8 +22,16 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val languageCode by viewModel.languageCode.collectAsState()
+    val currencyCode by viewModel.currencyCode.collectAsState()
     var showLanguageMenu by remember { mutableStateOf(false) }
+    var showCurrencyMenu by remember { mutableStateOf(false) }
     val languages = mapOf("ru" to "Русский", "en" to "English")
+    val currencies = mapOf(
+        "RUB" to "₽ Ruble",
+        "USD" to "$ Dollar",
+        "EUR" to "€ Euro",
+        "GBP" to "£ Pound"
+    )
     val context = LocalContext.current
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -118,6 +126,43 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                                     (context as? Activity)?.recreate()
                                 }
                                 showLanguageMenu = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Currency selection
+            Text(stringResource(R.string.settings_currency_label), style = MaterialTheme.typography.titleLarge)
+
+            ExposedDropdownMenuBox(
+                expanded = showCurrencyMenu,
+                onExpandedChange = { showCurrencyMenu = !showCurrencyMenu }
+            ) {
+                OutlinedTextField(
+                    value = currencies[currencyCode] ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.settings_currency_select)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showCurrencyMenu) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = showCurrencyMenu,
+                    onDismissRequest = { showCurrencyMenu = false }
+                ) {
+                    currencies.forEach { (code, name) ->
+                        DropdownMenuItem(
+                            text = { Text(name) },
+                            onClick = {
+                                if (code != currencyCode) {
+                                    viewModel.onCurrencySelected(code)
+                                }
+                                showCurrencyMenu = false
                             }
                         )
                     }

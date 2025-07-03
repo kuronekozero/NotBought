@@ -24,8 +24,14 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun HistoryScreen(viewModel: HistoryViewModel, navController: NavController) {
+fun HistoryScreen(viewModel: HistoryViewModel, navController: NavController, settingsViewModel: SettingsViewModel) {
     val allEntries by viewModel.allEntries.collectAsState()
+    val currencyCode by settingsViewModel.currencyCode.collectAsState()
+    val currencyFormat = remember(currencyCode) {
+        java.text.NumberFormat.getCurrencyInstance(java.util.Locale.getDefault()).apply {
+            currency = java.util.Currency.getInstance(currencyCode)
+        }
+    }
 
     if (viewModel.showDeleteConfirmation) {
         AlertDialog(
@@ -57,6 +63,7 @@ fun HistoryScreen(viewModel: HistoryViewModel, navController: NavController) {
             items(allEntries, key = { it.id }) { entry ->
                 HistoryItemCard(
                     entry = entry,
+                    currencyFormatter = currencyFormat,
                     onEditClick = {
                         navController.navigate("${Screen.EditEntryScreen.route}/${entry.id}")
                     },
@@ -72,12 +79,12 @@ fun HistoryScreen(viewModel: HistoryViewModel, navController: NavController) {
 @Composable
 fun HistoryItemCard(
     entry: SavingEntry,
+    currencyFormatter: java.text.NumberFormat,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     val isSaving = entry.cost >= 0
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.getDefault())
     val indicatorColor = if (isSaving) Color(0xFF4CAF50) else Color(0xFFF44336)
     val indicatorIcon = if (isSaving) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward
     val formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm", Locale.getDefault())
@@ -158,7 +165,7 @@ fun HistoryItemCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = currencyFormat.format(entry.cost),
+                        text = currencyFormatter.format(entry.cost),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold,
                         color = indicatorColor

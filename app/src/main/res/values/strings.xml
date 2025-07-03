@@ -9,6 +9,9 @@
     <string name="settings_language_label">Язык</string>
     <string name="settings_language_select">Выберите язык</string>
     <string name="settings_language_changed_message">Язык изменен. Перезапустите приложение.</string>
+    <string name="settings_currency_label">Валюта</string>
+    <string name="settings_currency_select">Выберите валюту</string>
+    <string name="settings_currency_changed_message">Валюта изменена.</string>
     <string name="settings_export_success">Экспорт завершен успешно</string>
     <string name="settings_export_error">Ошибка при экспорте</string>
     <string name="settings_import_success">Импорт завершен успешно</string>
@@ -19,6 +22,9 @@
     <string name="welcome_para1">My Savings — это простое приложение, созданное для того, чтобы помочь тебе отслеживать свои сбережения и траты. Часто бывает сложно понять, куда уходят деньги, или увидеть реальный прогресс в накоплениях, особенно когда речь идёт об экономии от отказа от ненужных покупок.</string>
     <string name="welcome_para2">Его основная идея — показать тебе, как ты можешь копить деньги, и визуализировать эффект от сэкономленных средств. Ты сможешь отмечать свои финансовые цели и следить за тем, как сбережения помогают тебе их достигать.</string>
     <string name="welcome_para3">Это твой личный инструмент для более осознанного отношения к финансам.</string>
+    <string name="welcome_language_select_label">Выберите язык приложения</string>
+    <string name="welcome_currency_select_label">Выберите валюту</string>
+    <string name="welcome_change_later_note">Вы сможете изменить эти настройки позже в разделе Настройки.</string>
     <string name="welcome_button_start">Давай начнем!</string>
 
     <!-- Navigation -->

@@ -39,10 +39,20 @@ class SettingsViewModel(
     val languageCode: StateFlow<String> = settingsRepository.languageCodeFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "ru")
 
+    val currencyCode: StateFlow<String> = settingsRepository.currencyCodeFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "RUB")
+
     fun onLanguageSelected(code: String) {
         viewModelScope.launch {
             settingsRepository.setLanguageCode(code)
             _uiState.update { it.copy(snackbarMessage = context.getString(R.string.settings_language_changed_message)) }
+        }
+    }
+
+    fun onCurrencySelected(code: String) {
+        viewModelScope.launch {
+            settingsRepository.setCurrencyCode(code)
+            _uiState.update { it.copy(snackbarMessage = context.getString(R.string.settings_currency_changed_message)) }
         }
     }
 

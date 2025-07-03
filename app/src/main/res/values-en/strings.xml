@@ -9,6 +9,9 @@
     <string name="settings_language_label">Language</string>
     <string name="settings_language_select">Select language</string>
     <string name="settings_language_changed_message">Language changed. Please restart the app.</string>
+    <string name="settings_currency_label">Currency</string>
+    <string name="settings_currency_select">Select currency</string>
+    <string name="settings_currency_changed_message">Currency changed.</string>
     <string name="settings_export_success">Export successful</string>
     <string name="settings_export_error">Error during export</string>
     <string name="settings_import_success">Import successful</string>
@@ -20,6 +23,9 @@
     <string name="welcome_para2">Its main idea is to show you how you can save money and to visualize the effect of your savings. You will be able to mark your financial goals and track how your savings help you achieve them.</string>
     <string name="welcome_para3">This is your personal tool for a more conscious approach to finances.</string>
     <string name="welcome_button_start">Let\'s get started!</string>
+    <string name="welcome_language_select_label">Choose app language</string>
+    <string name="welcome_currency_select_label">Choose currency</string>
+    <string name="welcome_change_later_note">You can change these settings later in the Settings.</string>
 
     <!-- Navigation -->
     <string name="nav_menu_description">Navigation Menu</string>

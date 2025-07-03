@@ -28,10 +28,17 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.ui.res.stringResource
 
 @Composable
-fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel) {
+fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel, settingsViewModel: SettingsViewModel) {
     val goalsState by viewModel.goalsState.collectAsState()
     val activeGoals = goalsState.activeGoals
     val completedGoals = goalsState.completedGoals
+
+    val currencyCode by settingsViewModel.currencyCode.collectAsState()
+    val currencyFormat = remember(currencyCode) {
+        java.text.NumberFormat.getCurrencyInstance(java.util.Locale.getDefault()).apply {
+            currency = java.util.Currency.getInstance(currencyCode)
+        }
+    }
 
     LaunchedEffect(key1 = Unit) {
         viewModel.navigateToGoal.collect { goalId ->
@@ -91,6 +98,7 @@ fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel) {
                     items(activeGoals, key = { it.goal.id }) { goalItem ->
                         GoalCard(
                             goalWithProgress = goalItem,
+                            currencyFormatter = currencyFormat,
                             onEditClicked = { viewModel.onEditGoalClicked(goalItem.goal) },
                             onDeleteClicked = { viewModel.onDeleteGoalClicked(goalItem.goal) }
                         )
@@ -109,6 +117,7 @@ fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel) {
                     items(completedGoals, key = { it.goal.id }) { goalItem ->
                         GoalCard(
                             goalWithProgress = goalItem,
+                            currencyFormatter = currencyFormat,
                             onEditClicked = { viewModel.onEditGoalClicked(goalItem.goal) },
                             onDeleteClicked = { viewModel.onDeleteGoalClicked(goalItem.goal) }
                         )
@@ -122,11 +131,11 @@ fun GoalsListScreen(navController: NavController, viewModel: GoalsViewModel) {
 @Composable
 fun GoalCard(
     goalWithProgress: GoalWithProgress,
+    currencyFormatter: NumberFormat,
     onEditClicked: () -> Unit,
     onDeleteClicked: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("ru", "RU"))
 
     val goal = goalWithProgress.goal
     val rawCurrentAmount = goalWithProgress.currentAmount
@@ -201,12 +210,12 @@ fun GoalCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = currencyFormat.format(displayAmount),
+                    text = currencyFormatter.format(displayAmount),
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = currencyFormat.format(goal.targetAmount),
+                    text = currencyFormatter.format(goal.targetAmount),
                     style = MaterialTheme.typography.bodySmall
                 )
             }

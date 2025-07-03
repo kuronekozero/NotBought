@@ -90,17 +90,17 @@ import android.util.Log
 // In StatisticsScreen.kt
 
 @Composable
-fun StatisticsScreen(viewModel: StatisticsViewModel) {
-    val totalSaved by viewModel.totalSaved.collectAsState()
-    val averageDailySavings by viewModel.averageDailySavings.collectAsState()
-    val averageDailyWaste by viewModel.averageDailyWaste.collectAsState()
-    val savingsProjections by viewModel.savingsProjections.collectAsState()
-    val wastesProjections by viewModel.wastesProjections.collectAsState()
-    val savingsData by viewModel.savingsData.collectAsState()
-    val wastesData by viewModel.wastesData.collectAsState()
-    val heatmapData by viewModel.heatmapData.collectAsState()
-    val currentMonth by viewModel.currentMonth.collectAsState()
-    val firstEntryDate by viewModel.firstEntryDate.collectAsState()
+fun StatisticsScreen(statisticsViewModel: StatisticsViewModel, settingsViewModel: SettingsViewModel) {
+    val totalSaved by statisticsViewModel.totalSaved.collectAsState()
+    val averageDailySavings by statisticsViewModel.averageDailySavings.collectAsState()
+    val averageDailyWaste by statisticsViewModel.averageDailyWaste.collectAsState()
+    val savingsProjections by statisticsViewModel.savingsProjections.collectAsState()
+    val wastesProjections by statisticsViewModel.wastesProjections.collectAsState()
+    val savingsData by statisticsViewModel.savingsData.collectAsState()
+    val wastesData by statisticsViewModel.wastesData.collectAsState()
+    val heatmapData by statisticsViewModel.heatmapData.collectAsState()
+    val currentMonth by statisticsViewModel.currentMonth.collectAsState()
+    val firstEntryDate by statisticsViewModel.firstEntryDate.collectAsState()
 
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
@@ -108,7 +108,12 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
         selectedDate = null
     }
 
-    val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale.getDefault()) }
+    val currencyCode by settingsViewModel.currencyCode.collectAsState()
+    val currencyFormat = remember(currencyCode) {
+        NumberFormat.getCurrencyInstance(Locale.getDefault()).apply {
+            currency = java.util.Currency.getInstance(currencyCode)
+        }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -161,8 +166,8 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
                 onDateSelected = { date ->
                     selectedDate = if (selectedDate == date) null else date
                 },
-                onPreviousMonth = { viewModel.previousMonth() },
-                onNextMonth = { viewModel.nextMonth() }
+                onPreviousMonth = { statisticsViewModel.previousMonth() },
+                onNextMonth = { statisticsViewModel.nextMonth() }
             )
 
             DailyDetailCard(
@@ -175,20 +180,20 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
 
         // 4. Net Savings Line Chart
         item {
-            val netSavingsData by viewModel.netSavingsOverTimeData.collectAsState()
-            val selectedPeriod by viewModel.selectedTimePeriod.collectAsState()
+            val netSavingsData by statisticsViewModel.netSavingsOverTimeData.collectAsState()
+            val selectedPeriod by statisticsViewModel.selectedTimePeriod.collectAsState()
 
             NetSavingsLineChartCard(
                 data = netSavingsData,
                 selectedPeriod = selectedPeriod,
-                onPeriodSelect = { viewModel.setTimePeriod(it) },
+                onPeriodSelect = { statisticsViewModel.setTimePeriod(it) },
                 currencyFormatter = currencyFormat
             )
         }
 
         // 5. Savings vs Spending Bar Chart
         item {
-            DualBarChartCard(viewModel = viewModel)
+            DualBarChartCard(viewModel = statisticsViewModel, currencyFormatter = currencyFormat)
         }
 
         // 6. Savings by Category Pie Chart
@@ -952,12 +957,10 @@ fun CategoryPieChartWithLegend(
 }
 
 @Composable
-fun DualBarChartCard(viewModel: StatisticsViewModel) {
+fun DualBarChartCard(viewModel: StatisticsViewModel, currencyFormatter: NumberFormat) {
     val period by viewModel.dualBarChartPeriod.collectAsState()
     val data by viewModel.dualBarChartData.collectAsState()
     val refDate by viewModel.currentDualBarChartDate.collectAsState()
-    val currencyFormat = remember { java.text.NumberFormat.getCurrencyInstance(Locale.getDefault()) }
-
     val allZero = data.all { it.savings == 0.0 && it.spending == 0.0 }
 
     val tabs = listOf(
@@ -1017,7 +1020,7 @@ fun DualBarChartCard(viewModel: StatisticsViewModel) {
             if (!allZero) {
                 DualBarChart(
                     data = data,
-                    currencyFormatter = currencyFormat,
+                    currencyFormatter = currencyFormatter,
                     period = period,
                     modifier = Modifier
                         .fillMaxWidth()
