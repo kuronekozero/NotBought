@@ -331,6 +331,27 @@ class StatisticsViewModel(private val savingEntryDao: SavingEntryDao) : ViewMode
             }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // --- Average daily savings and waste ---
+    val averageDailySavings: StateFlow<Double> = allEntries.map { entries ->
+        if (entries.isEmpty()) return@map 0.0
+        val firstDay = entries.minOf { it.date.toLocalDate() }
+        val lastDay = entries.maxOf { it.date.toLocalDate() }
+        val days = java.time.temporal.ChronoUnit.DAYS.between(firstDay, lastDay).toInt() + 1
+        if (days <= 0) return@map 0.0
+        val totalSavings = entries.filter { it.cost > 0 }.sumOf { it.cost }
+        totalSavings / days
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
+    val averageDailyWaste: StateFlow<Double> = allEntries.map { entries ->
+        if (entries.isEmpty()) return@map 0.0
+        val firstDay = entries.minOf { it.date.toLocalDate() }
+        val lastDay = entries.maxOf { it.date.toLocalDate() }
+        val days = java.time.temporal.ChronoUnit.DAYS.between(firstDay, lastDay).toInt() + 1
+        if (days <= 0) return@map 0.0
+        val totalWaste = entries.filter { it.cost < 0 }.sumOf { it.cost }.let { kotlin.math.abs(it) }
+        totalWaste / days
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 }
 
 class StatisticsViewModelFactory(

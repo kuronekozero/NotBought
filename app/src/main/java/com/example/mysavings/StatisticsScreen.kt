@@ -83,12 +83,15 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.zIndex
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.material.icons.filled.EmojiEvents
 
 // In StatisticsScreen.kt
 
 @Composable
 fun StatisticsScreen(viewModel: StatisticsViewModel) {
     val totalSaved by viewModel.totalSaved.collectAsState()
+    val averageDailySavings by viewModel.averageDailySavings.collectAsState()
+    val averageDailyWaste by viewModel.averageDailyWaste.collectAsState()
     val savingsProjections by viewModel.savingsProjections.collectAsState()
     val wastesProjections by viewModel.wastesProjections.collectAsState()
     val savingsData by viewModel.savingsData.collectAsState()
@@ -112,10 +115,18 @@ fun StatisticsScreen(viewModel: StatisticsViewModel) {
     ) {
         // --- NEW ORDER STARTS HERE ---
 
-        // 1. Total Net Savings Card
+        // 1. Redesigned Total Net Savings Card
         item {
-            TotalNetSavingsCard(
+            ProminentTotalNetSavingsCard(
                 totalSaved = totalSaved,
+                currencyFormatter = currencyFormat
+            )
+        }
+        // 2. Average Daily Stats Card
+        item {
+            AverageDailyStatsCard(
+                averageDailySavings = averageDailySavings,
+                averageDailyWaste = averageDailyWaste,
                 currencyFormatter = currencyFormat
             )
         }
@@ -489,32 +500,105 @@ fun StatisticRow(label: String, value: String) {
 }
 
 @Composable
-fun TotalNetSavingsCard(totalSaved: Double, currencyFormatter: NumberFormat) {
+fun ProminentTotalNetSavingsCard(totalSaved: Double, currencyFormatter: NumberFormat) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        // Use the same background color as the calendar and other charts
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 120.dp)
+            .padding(vertical = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.15f))
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(24.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Всего сэкономлено (чистыми)",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            Icon(
+                imageVector = Icons.Default.EmojiEvents,
+                contentDescription = null,
+                tint = Color(0xFF388E3C),
+                modifier = Modifier.size(48.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = currencyFormatter.format(totalSaved),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Spacer(modifier = Modifier.width(20.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = "Всего сэкономлено (чистыми)",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = Color(0xFF388E3C)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = currencyFormatter.format(totalSaved),
+                    style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.ExtraBold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AverageDailyStatsCard(
+    averageDailySavings: Double,
+    averageDailyWaste: Double,
+    currencyFormatter: NumberFormat
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = "В среднем экономите в день",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color(0xFF388E3C)
+                )
+                Text(
+                    text = "+${currencyFormatter.format(averageDailySavings)}",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = Color(0xFF388E3C)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "В среднем тратите лишнего в день",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color(0xFFD32F2F)
+                )
+                Text(
+                    text = "-${currencyFormatter.format(averageDailyWaste)}",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = Color(0xFFD32F2F)
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                modifier = Modifier.widthIn(max = 160.dp),
+                horizontalAlignment = Alignment.End
+            ) {
+                Text(
+                    text = "Средние значения за всё время использования приложения.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.End
+                )
+            }
         }
     }
 }
