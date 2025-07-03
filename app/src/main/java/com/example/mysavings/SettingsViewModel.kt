@@ -8,10 +8,14 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Dispatchers
 
 class SettingsViewModel(
     private val settingsRepository: SettingsRepository,
     private val savingEntryDao: SavingEntryDao,
+    private val goalDao: GoalDao,
+    private val userCategoryDao: UserCategoryDao,
     private val context: Context,
 ) : ViewModel() {
 
@@ -72,8 +76,10 @@ class SettingsViewModel(
         viewModelScope.launch {
             try {
                 val entries = savingEntryDao.getAllEntriesList()
+                val goals = goalDao.getAllGoals().first()
+                val categories = userCategoryDao.getAllCategories().first()
                 context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                    CsvHandler.writeCsv(outputStream, entries)
+                    CsvHandler.writeBackup(outputStream, entries, goals, categories)
                 }
                 _uiState.update { it.copy(snackbarMessage = context.getString(R.string.settings_export_success)) }
             } catch (e: Exception) {
@@ -86,8 +92,16 @@ class SettingsViewModel(
         viewModelScope.launch {
             try {
                 context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                    val entries = CsvHandler.readCsv(inputStream)
-                    savingEntryDao.insertAll(entries)
+                    val backup = CsvHandler.readBackup(inputStream)
+
+                    // Categories first to satisfy FK constraints (if any)
+                    userCategoryDao.insertAll(backup.categories)
+
+                    // Goals
+                    backup.goals.forEach { goalDao.insert(it) }
+
+                    // Entries
+                    savingEntryDao.insertAll(backup.entries)
                 }
                 _uiState.update { it.copy(snackbarMessage = context.getString(R.string.settings_import_success)) }
             } catch (e: Exception) {
@@ -104,12 +118,14 @@ class SettingsViewModel(
 class SettingsViewModelFactory(
     private val repository: SettingsRepository,
     private val savingEntryDao: SavingEntryDao,
+    private val goalDao: GoalDao,
+    private val userCategoryDao: UserCategoryDao,
     private val context: Context
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SettingsViewModel(repository, savingEntryDao, context) as T
+            return SettingsViewModel(repository, savingEntryDao, goalDao, userCategoryDao, context) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

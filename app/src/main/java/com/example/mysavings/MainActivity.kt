@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
     private val userCategoryDao by lazy { database.userCategoryDao() }
     private val settingsRepository by lazy { SettingsRepository(this) }
     private val settingsViewModel: SettingsViewModel by viewModels {
-        SettingsViewModelFactory(settingsRepository, savingEntryDao, applicationContext)
+        SettingsViewModelFactory(settingsRepository, savingEntryDao, goalDao, userCategoryDao, applicationContext)
     }
 
     private val mainViewModel: MainViewModel by viewModels {

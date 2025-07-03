@@ -56,7 +56,9 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     exportLauncher.launch("mysavings_export_$timeStamp.csv")
                 }
                 is SettingsViewModel.UiAction.LaunchImport -> {
-                    importLauncher.launch(arrayOf("text/csv"))
+                    // Some file providers label CSVs as "text/comma-separated-values", "application/octet-stream", etc.
+                    // Use a broad filter so user can pick any file, we'll validate the extension ourselves.
+                    importLauncher.launch(arrayOf("*/*"))
                 }
             }
         }
