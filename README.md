@@ -1,4 +1,4 @@
-# My Savings
+# NotBought 
 
 A mobile app for tracking money saved by not buying unnecessary things.
 
