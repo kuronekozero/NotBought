@@ -9,4 +9,5 @@ sealed class Screen(val route: String) {
     object AddGoalScreen : Screen("add_goal_screen")
     object HistoryScreen : Screen("history_screen")
     object EditEntryScreen : Screen("edit_entry_screen")
+    object AchievementsScreen : Screen("achievements_screen")
 }

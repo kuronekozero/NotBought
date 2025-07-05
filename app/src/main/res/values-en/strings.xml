@@ -137,4 +137,64 @@
     <string name="cat_dialog_delete_category_desc">Delete category</string>
     <string name="cat_dialog_close_button">Close</string>
 
+    <!-- Achievements Screen -->
+    <string name="screen_title_achievements">Achievements</string>
+    <string name="achievements_category_saved">Savings</string>
+    <string name="achievements_category_wasted">Wasted</string>
+    <string name="achievements_category_streak">Streak</string>
+    <string name="achievements_completed_desc">Achievement unlocked</string>
+
+    <!-- Achievements Details -->
+    <!-- Savings achievements -->
+    <string name="achievement_saved_1_name">first dollar</string>
+    <string name="achievement_saved_1_desc">Save your first $1</string>
+    <string name="achievement_saved_10_name">ten spot</string>
+    <string name="achievement_saved_10_desc">Save $10 total</string>
+    <string name="achievement_saved_100_name">century club</string>
+    <string name="achievement_saved_100_desc">Save $100 total</string>
+    <string name="achievement_saved_1000_name">thousand saver</string>
+    <string name="achievement_saved_1000_desc">Save $1000 total</string>
+    <string name="achievement_saved_10000_name">fiveish club</string>
+    <string name="achievement_saved_10000_desc">Save $10000 total</string>
+    <string name="achievement_saved_100000_name">six figure saver</string>
+    <string name="achievement_saved_100000_desc">Save $100000 total</string>
+    <string name="achievement_saved_1000000_name">millionaire</string>
+    <string name="achievement_saved_1000000_desc">Save $1000000 total</string>
+
+    <!-- Wasted achievements -->
+    <string name="achievement_wasted_1_name">first waste</string>
+    <string name="achievement_wasted_1_desc">1$ wasted! Let\'s hope this will be the last one</string>
+    <string name="achievement_wasted_10_name">pocket drain</string>
+    <string name="achievement_wasted_10_desc">Waste $10 total</string>
+    <string name="achievement_wasted_100_name">impulse buyer</string>
+    <string name="achievement_wasted_100_desc">Waste $100 total</string>
+    <string name="achievement_wasted_1000_name">take the kid\'s credit card away!</string>
+    <string name="achievement_wasted_1000_desc">Waste $1000 total</string>
+    <string name="achievement_wasted_10000_name">money burner</string>
+    <string name="achievement_wasted_10000_desc">Waste $10000 total</string>
+    <string name="achievement_wasted_100000_name">wealth destroyer</string>
+    <string name="achievement_wasted_100000_desc">Waste $100000 total</string>
+    <string name="achievement_wasted_1000000_name">point of no return</string>
+    <string name="achievement_wasted_1000000_desc">Waste $1000000 total</string>
+
+    <!-- Streak achievements -->
+    <string name="achievement_streak_7_name">week warrior</string>
+    <string name="achievement_streak_7_desc">7 days streak</string>
+    <string name="achievement_streak_15_name">flame keeper</string>
+    <string name="achievement_streak_15_desc">15 days streak</string>
+    <string name="achievement_streak_30_name">monthly master</string>
+    <string name="achievement_streak_30_desc">30 days streak</string>
+    <string name="achievement_streak_100_name">century champion</string>
+    <string name="achievement_streak_100_desc">100 days streak</string>
+    <string name="achievement_streak_365_name">annual legend</string>
+    <string name="achievement_streak_365_desc">365 days streak</string>
+    <string name="achievement_streak_500_name">streak elite</string>
+    <string name="achievement_streak_500_desc">500 days streak</string>
+    <string name="achievement_streak_1000_name">immortal streak</string>
+    <string name="achievement_streak_1000_desc">1000 days streak</string>
+
+    <!-- Expand / Collapse buttons -->
+    <string name="achievements_expand_more">Show all</string>
+    <string name="achievements_collapse">Hide</string>
+
 </resources>

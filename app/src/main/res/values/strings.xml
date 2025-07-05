@@ -136,4 +136,64 @@
     <string name="cat_dialog_no_custom_categories">Пользовательских категорий нет.</string>
     <string name="cat_dialog_delete_category_desc">Удалить категорию</string>
     <string name="cat_dialog_close_button">Закрыть</string>
+
+    <!-- Achievements Screen -->
+    <string name="screen_title_achievements">Достижения</string>
+    <string name="achievements_category_saved">Сбережения</string>
+    <string name="achievements_category_wasted">Лишние траты</string>
+    <string name="achievements_category_streak">Серия дней</string>
+    <string name="achievements_completed_desc">Достижение получено</string>
+
+    <!-- Achievements Details -->
+    <!-- Savings achievements -->
+    <string name="achievement_saved_1_name">первый доллар</string>
+    <string name="achievement_saved_1_desc">Сохраните свой первый $1</string>
+    <string name="achievement_saved_10_name">десятка</string>
+    <string name="achievement_saved_10_desc">Сохраните в сумме $10</string>
+    <string name="achievement_saved_100_name">клуб сотни</string>
+    <string name="achievement_saved_100_desc">Сохраните в сумме $100</string>
+    <string name="achievement_saved_1000_name">копилка тысячи</string>
+    <string name="achievement_saved_1000_desc">Сохраните в сумме $1000</string>
+    <string name="achievement_saved_10000_name">десятитысячник</string>
+    <string name="achievement_saved_10000_desc">Сохраните в сумме $10000</string>
+    <string name="achievement_saved_100000_name">шестизначный вклад</string>
+    <string name="achievement_saved_100000_desc">Сохраните в сумме $100000</string>
+    <string name="achievement_saved_1000000_name">миллионер</string>
+    <string name="achievement_saved_1000000_desc">Сохраните в сумме $1000000</string>
+
+    <!-- Wasted achievements -->
+    <string name="achievement_wasted_1_name">первый слив</string>
+    <string name="achievement_wasted_1_desc">Потратьте лишние $1</string>
+    <string name="achievement_wasted_10_name">пустой карман</string>
+    <string name="achievement_wasted_10_desc">Потратьте лишние $10</string>
+    <string name="achievement_wasted_100_name">импульсивный покупатель</string>
+    <string name="achievement_wasted_100_desc">Потратьте лишние $100</string>
+    <string name="achievement_wasted_1000_name">заберите у ребенка кредитку!</string>
+    <string name="achievement_wasted_1000_desc">Потратьте лишние $1000</string>
+    <string name="achievement_wasted_10000_name">пожиратель денег</string>
+    <string name="achievement_wasted_10000_desc">Потратьте лишние $10000</string>
+    <string name="achievement_wasted_100000_name">разоритель богатств</string>
+    <string name="achievement_wasted_100000_desc">Потратьте лишние $100000</string>
+    <string name="achievement_wasted_1000000_name">точка невозврата</string>
+    <string name="achievement_wasted_1000000_desc">Потратьте лишние $1000000</string>
+
+    <!-- Streak achievements -->
+    <string name="achievement_streak_7_name">воин недели</string>
+    <string name="achievement_streak_7_desc">Серия из 7 дней</string>
+    <string name="achievement_streak_15_name">хранитель огня</string>
+    <string name="achievement_streak_15_desc">Серия из 15 дней</string>
+    <string name="achievement_streak_30_name">мастер месяца</string>
+    <string name="achievement_streak_30_desc">Серия из 30 дней</string>
+    <string name="achievement_streak_100_name">чемпион сотни</string>
+    <string name="achievement_streak_100_desc">Серия из 100 дней</string>
+    <string name="achievement_streak_365_name">легенда года</string>
+    <string name="achievement_streak_365_desc">Серия из 365 дней</string>
+    <string name="achievement_streak_500_name">элита серии</string>
+    <string name="achievement_streak_500_desc">Серия из 500 дней</string>
+    <string name="achievement_streak_1000_name">бессмертный рекорд</string>
+    <string name="achievement_streak_1000_desc">Серия из 1000 дней</string>
+
+    <!-- Expand / Collapse buttons -->
+    <string name="achievements_expand_more">Показать все</string>
+    <string name="achievements_collapse">Скрыть</string>
 </resources>

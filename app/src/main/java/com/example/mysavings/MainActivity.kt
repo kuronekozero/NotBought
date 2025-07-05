@@ -40,6 +40,7 @@ import java.util.Locale
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import androidx.compose.material.icons.outlined.EmojiEvents
 
 
 class MainActivity : ComponentActivity() {
@@ -69,6 +70,10 @@ class MainActivity : ComponentActivity() {
         HistoryViewModelFactory(savingEntryDao, userCategoryDao)
     }
 
+    private val achievementsViewModel: AchievementsViewModel by viewModels {
+        AchievementsViewModelFactory(savingEntryDao, settingsRepository)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Set the locale before the activity is created
         runBlocking {
@@ -96,7 +101,8 @@ class MainActivity : ComponentActivity() {
                             statisticsViewModel = statisticsViewModel,
                             settingsViewModel = settingsViewModel,
                             goalsViewModel = goalsViewModel,
-                            historyViewModel = historyViewModel
+                            historyViewModel = historyViewModel,
+                            achievementsViewModel = achievementsViewModel
                         )
                     }
                     false -> {
@@ -125,7 +131,8 @@ fun AppShell(
     statisticsViewModel: StatisticsViewModel,
     settingsViewModel: SettingsViewModel,
     goalsViewModel: GoalsViewModel,
-    historyViewModel: HistoryViewModel
+    historyViewModel: HistoryViewModel,
+    achievementsViewModel: AchievementsViewModel
 ) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -159,7 +166,8 @@ fun AppShell(
                 statisticsViewModel = statisticsViewModel,
                 settingsViewModel = settingsViewModel,
                 goalsViewModel = goalsViewModel,
-                historyViewModel = historyViewModel
+                historyViewModel = historyViewModel,
+                achievementsViewModel = achievementsViewModel
             )
         }
     }
@@ -196,6 +204,7 @@ fun AppDrawerContent(
             Screen.HistoryScreen,
             Screen.StatisticsScreen,
             Screen.GoalsScreen,
+            Screen.AchievementsScreen,
             Screen.SettingsScreen
         )
         menuItems.forEach { screen ->
@@ -238,7 +247,8 @@ fun AppNavigationHost(
     statisticsViewModel: StatisticsViewModel,
     settingsViewModel: SettingsViewModel,
     goalsViewModel: GoalsViewModel,
-    historyViewModel: HistoryViewModel
+    historyViewModel: HistoryViewModel,
+    achievementsViewModel: AchievementsViewModel
 ) {
     NavHost(
         navController = navController,
@@ -299,6 +309,9 @@ fun AppNavigationHost(
                 )
             }
         }
+        composable(Screen.AchievementsScreen.route) {
+            AchievementsScreen(viewModel = achievementsViewModel)
+        }
     }
 }
 
@@ -312,6 +325,7 @@ fun getTitleForScreen(route: String?): String {
         Screen.SettingsScreen.route -> stringResource(id = R.string.screen_title_settings)
         Screen.AddGoalScreen.route -> stringResource(id = R.string.screen_title_add_goal)
         "edit_entry/{entryId}" -> stringResource(id = R.string.screen_title_edit_entry)
+        Screen.AchievementsScreen.route -> stringResource(id = R.string.screen_title_achievements)
         else -> ""
     }
 }
@@ -324,6 +338,7 @@ private fun getIconForScreen(route: String?): ImageVector {
         Screen.StatisticsScreen.route -> Icons.Outlined.ShowChart
         Screen.GoalsScreen.route -> Icons.Outlined.Flag
         Screen.SettingsScreen.route -> Icons.Outlined.Settings
+        Screen.AchievementsScreen.route -> Icons.Outlined.EmojiEvents
         else -> Icons.Outlined.AddCircle // Default icon
     }
 }
