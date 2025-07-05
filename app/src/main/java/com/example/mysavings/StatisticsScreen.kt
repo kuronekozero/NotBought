@@ -1216,8 +1216,4 @@ private fun DualBarChart(
     }
 }
 
-//fun safeString(id: Int, vararg args: Any) = try {
-//    context.getString(id, *args)
-//} catch (e: Exception) {
-//    Log.e("i18n", "String fail", e); "‼️STRING_ERROR‼️"
-//}
+
