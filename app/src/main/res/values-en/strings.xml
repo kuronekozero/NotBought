@@ -197,4 +197,15 @@
     <string name="achievements_expand_more">Show all</string>
     <string name="achievements_collapse">Hide</string>
 
+    <!-- Donate -->
+    <string name="donate_nav_title">Donate</string>
+    <string name="donate_thanks_header">Thank you for your support!</string>
+    <string name="donate_copied">Copied to clipboard</string>
+
+    <!-- About -->
+    <string name="about_nav_title">About</string>
+    <string name="about_source_code">Source Code</string>
+    <string name="about_version">Version: %1$s</string>
+    <string name="about_contact_header">Contact</string>
+
 </resources>

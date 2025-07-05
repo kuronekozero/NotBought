@@ -196,4 +196,15 @@
     <!-- Expand / Collapse buttons -->
     <string name="achievements_expand_more">Показать все</string>
     <string name="achievements_collapse">Скрыть</string>
+
+    <!-- Donate -->
+    <string name="donate_nav_title">Поддержать</string>
+    <string name="donate_thanks_header">Спасибо за поддержку!</string>
+    <string name="donate_copied">Скопировано в буфер</string>
+
+    <!-- About -->
+    <string name="about_nav_title">О приложении</string>
+    <string name="about_source_code">Исходный код</string>
+    <string name="about_version">Версия: %1$s</string>
+    <string name="about_contact_header">Контакты</string>
 </resources>

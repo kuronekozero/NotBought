@@ -41,6 +41,8 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.VolunteerActivism
+import androidx.compose.material.icons.outlined.Info
 
 
 class MainActivity : ComponentActivity() {
@@ -199,7 +201,7 @@ fun AppDrawerContent(
 ) {
     ModalDrawerSheet {
         Spacer(Modifier.height(12.dp))
-        val menuItems = listOf(
+        val menuItemsTop = listOf(
             Screen.MainScreen,
             Screen.HistoryScreen,
             Screen.StatisticsScreen,
@@ -207,7 +209,8 @@ fun AppDrawerContent(
             Screen.AchievementsScreen,
             Screen.SettingsScreen
         )
-        menuItems.forEach { screen ->
+        val menuItemsBottom = listOf(Screen.DonateScreen, Screen.AboutScreen)
+        menuItemsTop.forEach { screen ->
             val isSelected: Boolean
             val routeToNavigate: String
 
@@ -225,6 +228,25 @@ fun AppDrawerContent(
                 selected = isSelected,
                 onClick = {
                     navController.navigate(routeToNavigate) {
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                    closeDrawer()
+                },
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+            )
+        }
+        Divider()
+        menuItemsBottom.forEach { screen ->
+            NavigationDrawerItem(
+                icon = { Icon(getIconForScreen(screen.route), contentDescription = null) },
+                label = { Text(getTitleForScreen(screen.route)) },
+                selected = currentRoute == screen.route,
+                onClick = {
+                    navController.navigate(screen.route) {
                         popUpTo(navController.graph.startDestinationId) {
                             saveState = true
                         }
@@ -312,6 +334,10 @@ fun AppNavigationHost(
         composable(Screen.AchievementsScreen.route) {
             AchievementsScreen(viewModel = achievementsViewModel)
         }
+        composable(Screen.DonateScreen.route) {
+            DonateScreen()
+        }
+        composable(Screen.AboutScreen.route) { AboutScreen() }
     }
 }
 
@@ -326,6 +352,8 @@ fun getTitleForScreen(route: String?): String {
         Screen.AddGoalScreen.route -> stringResource(id = R.string.screen_title_add_goal)
         "edit_entry/{entryId}" -> stringResource(id = R.string.screen_title_edit_entry)
         Screen.AchievementsScreen.route -> stringResource(id = R.string.screen_title_achievements)
+        Screen.DonateScreen.route -> stringResource(id = R.string.donate_nav_title)
+        Screen.AboutScreen.route -> stringResource(id = R.string.about_nav_title)
         else -> ""
     }
 }
@@ -339,6 +367,8 @@ private fun getIconForScreen(route: String?): ImageVector {
         Screen.GoalsScreen.route -> Icons.Outlined.Flag
         Screen.SettingsScreen.route -> Icons.Outlined.Settings
         Screen.AchievementsScreen.route -> Icons.Outlined.EmojiEvents
+        Screen.DonateScreen.route -> Icons.Outlined.VolunteerActivism
+        Screen.AboutScreen.route -> Icons.Outlined.Info
         else -> Icons.Outlined.AddCircle // Default icon
     }
 }
