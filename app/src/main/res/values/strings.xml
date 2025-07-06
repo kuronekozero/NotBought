@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">MySavings</string>
+    <string name="app_name">NotBought</string>
 
     <!-- Settings Screen -->
     <string name="settings_data_management">Управление данными</string>
