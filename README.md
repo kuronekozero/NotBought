@@ -1,4 +1,7 @@
-# NotBought 
+<div align="center">
+  <img src="app/src/main/res/mipmap-anydpi/icon.png" alt="NotBought App Icon" width="100"/>
+  <h1>NotBought</h1>
+</div>
 
 A mobile app for tracking money saved by not buying unnecessary things.
 
